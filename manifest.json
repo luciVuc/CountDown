@@ -1,0 +1,33 @@
+{
+  "manifest_version": 2,
+  "name": "CountDown",
+  "short_name": "CountDown",
+  "description": "A count down WEB app. Runs in browser as well as a Chrome app.",
+  "version": "0.0.1",
+  "minimum_chrome_version": "38",
+  "icons": {
+    "16": "assets/icon_16.png",
+    "128": "assets/icon_128.png"
+  },
+  "app": {
+    "background": {
+      "scripts": [
+        "background.js"
+      ]
+    }
+  },
+  "permissions": [
+    "storage",
+    "webview"
+  ],
+  "webview": {
+    "partitions": [
+      {
+        "name": "static",
+        "accessible_resources": [
+          "*.*"
+        ]
+      }
+    ]
+  }
+}

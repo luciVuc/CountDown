@@ -1,0 +1,149 @@
+/* CSS file placeholder. */
+html, body {
+  position: relative;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  min-width: 340px;
+  height: 100%;
+  min-height: 280px;
+  overflow: hidden;
+  background-color: #F2EFE8;
+}
+
+body {
+  user-select: none;
+  cursor: default;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  font-size: 75%;
+}
+
+details {
+  position: absolute;
+  background-color: transparent;
+  color: #003f72;
+  padding: 5px;
+  border-radius: 0.4rem;
+  width: 20px;
+  top: 10px;
+  left: 10px;
+}
+details[open] {
+  margin-right: 10px;
+  width: auto;
+  color: white;
+  background-color: #003f72;
+  border: 1px solid #999;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 5px 5px 5px 5px;
+  box-shadow: 2px 2px 6px #b6b6b6;
+}
+
+details summary::-webkit-details-marker {
+  display:none;
+}
+
+.settingsForm hr {
+  border-style: solid;
+  border-width: 1px 0 0 0;
+}
+
+.settingsForm {
+  background-color: #003f72;
+  width: auto;
+  height: auto;
+  margin: auto;
+  margin-bottom: 5px;
+}
+.settingsForm table {
+  width: auto;
+  height: auto;
+  margin: auto;
+}
+
+.settingsForm table caption {
+  padding-top: 5px;
+}
+
+.settingsForm table th {
+  text-align: left;
+}
+
+.settingsForm table td {
+}
+
+.settingsForm table td input[type="datetime-local"],
+.settingsForm table td input[type="text"] {
+  width: 220px;
+  height: 22px;
+  background-color: #002d51;
+  border: 0;
+  border-radius: .4em;
+  color: #fff;
+  padding-left: 1em;
+  margin: 0;
+}
+
+.settingsForm table td input[type="date"] {
+}
+.settingsForm table td input[type="time"] {
+}
+.settingsForm table td input[type="text"] {
+}
+.settingsForm table td input[type="submit"],
+.settingsForm table td input[type="reset"],
+.settingsForm table td input[type="button"] {
+  width: 50%;
+}
+
+.wrapper {
+  text-align: center;
+  padding: 10px;
+}
+
+.tile {
+  display: inline-block;
+  width: 100px;
+  min-width: 100px;
+  max-width: 100%;
+  height: auto;
+  margin: 4px;
+  border: 1px solid #999;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 5px 5px 5px 5px;
+  background-color: #fff;
+  box-shadow: 2px 2px 6px #b6b6b6;
+}
+
+.tile h1 {
+  font-size: 2.3rem;
+}
+
+footer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 30px;
+  width: 100%;
+  background-color: #003f72;
+  color: #b2cfe4;
+  font-size: 10px;
+}
+
+footer span {
+  display: inline-block;
+  padding: 3px 6px;
+}
+
+.copyright {
+  font-size: 8px;
+  float: right;
+}
+
+.popup-webview {
+  width: 100%;
+  height: 100vh;
+}

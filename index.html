@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CountDown</title>
+  <link rel="stylesheet" href="css/mobirise/style.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="index.js"></script>
+</head>
+
+<body>
+  <!--main view-->
+  <div id="wrapper" class="wrapper">
+    <h2 id="lblDisplay" class="labelDisplay"></h2>
+  </div>
+
+  <!--status bar-->
+  <footer>
+    <span id="status" class="status"></span>
+    <span class="copyright">&copy; 2017 LV</span>
+  </footer>
+
+  <!--menu-->
+  <details id="settingsMenu" class="settingsMenu">
+    <summary class="mbri-menu"></summary>
+    <div id="settingsForm" class="settingsForm">
+      <table>
+        <caption><span>Enter CountDown Parameters</span>
+          <hr/>
+        </caption>
+        <tr>
+          <th><label for="finalDateTime">Final DateTime: </label></th>
+          <td>
+            <input type="datetime-local" id="finalDateTime" name="finalDateTime">
+          </td>
+        </tr>
+        <tr>
+          <th><label for="ongoingMsg">Counting down message: </label></th>
+          <td><input type="text" id="ongoingMsg" name="ongoingMsg" placeholder="Counting down message"></td>
+        </tr>
+        <tr>
+          <th><label for="finalMsg">Final message: </label></th>
+          <td><input type="text" id="finalMsg" name="finalMsg" placeholder="Final Message"></td>
+        </tr>
+        <tr>
+          <th></th>
+          <td>
+            <hr/><input type="submit" id="okBtn" value="OK"><input type="reset" id="resetBtn" value="Reset"></td>
+        </tr>
+      </table>
+    </div>
+  </details>
+</body>
+
+</html>
