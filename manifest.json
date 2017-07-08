@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "CountDown",
   "short_name": "CountDown",
-  "description": "A count down WEB app. Runs in browser as well as a Chrome app.",
+  "description": "A browser-based app which displays a Countdown timer as days, hours, minutes and seconds left until a user-selected date and time is reached.",
   "version": "0.0.1",
   "minimum_chrome_version": "38",
   "icons": {
