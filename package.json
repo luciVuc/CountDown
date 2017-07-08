@@ -1,7 +1,7 @@
 {
   "name": "countdown",
   "version": "1.0.0",
-  "description": "A count down WEB app. Runs in browser as well as a Chrome app.",
+  "description": "A browser-based app which displays a Countdown timer as days, hours, minutes and seconds left until a user-selected date and time is reached.",
   "main": "index.html",
   "window": {
     "width": 550,
