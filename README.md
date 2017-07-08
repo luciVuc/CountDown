@@ -1,7 +1,7 @@
 # CountDown
 
 ## Description
-A simple browser-based app which displays a Countdown timer in remaining days, hours, minutes and seconds, until a user-selected date and time is reached.
+A simple browser-based app which displays a Countdown timer as days, hours, minutes and seconds left until a user-selected date and time is reached.
 
 ## Usage
   - Open the menu
