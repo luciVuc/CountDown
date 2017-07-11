@@ -1,7 +1,7 @@
 {
   "name": "countdown",
   "version": "1.0.0",
-  "description": "A browser-based app which displays a Countdown timer as days, hours, minutes and seconds left until a user-selected date and time is reached.",
+  "description": "Browser-based app which displays a Countdown timer to a selected date and time.",
   "main": "index.html",
   "window": {
     "width": 550,

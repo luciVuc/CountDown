@@ -23,33 +23,53 @@ function drawPieSlice(oContext, centerX, centerY, radius, startAngle, endAngle, 
 
 const $canvas = Symbol("$canvas");
 const ctx = Symbol("ctx");
+const min = Symbol("min");
 const max = Symbol("max");
 const value = Symbol("value");
-const backgroundColor = Symbol("backgroundColor");
-const color = Symbol("color");
-const textColor = Symbol("textColor");
+const lineWidth = Symbol("lineWidth");
+const lineFill = Symbol("lineFill");
+const backLineFill = Symbol("backLineFill");
+const bgFill = Symbol("bgFill");
+const showValue = Symbol("showValue");
+const valueStyle = Symbol("valueStyle");
+const valueColor = Symbol("valueColor");
 
 /**
  * @public	Displays a round, doughnut-like progress bar, using HTML canvas.
  * 
  * @param {object}	mSettings	Hashmap of instance values
  * @param {HTMLCanvasElement}	mSettings.$canvas	The HTML canvas element to draw on
- * @param {intenger} mSettings.max The maximum value
+ * @param {integer} mSettings.min The minimum value
+ * @param {integer} mSettings.max The maximum value
  * @param {integer} mSettings.value The current value
- * @param {CSSColor} mSettings.backgroundColor The background color, in CSS format
- * @param {CSSColor} mSettings.color The fore color in CSS format
- * @param {CSSColor} mSettings.textColor The text color in CSS format
+ * @param {integer} mSettings.lineWidth The width of the progress line
+ * @param {CSSColor} mSettings.lineFill The color of the progress line, in CSS format
+ * @param {CSSColor} mSettings.backLineFill The background color of the progress line, in CSS format
+ * @param {CSSColor} mSettings.bgFill The background color, in CSS format
+ * @param {boolean} mSettings.showValue Whether to show or not the info text
+ * @param {CSSFont} mSettings.valueStyle The info text font style, in CSS format
+ * @param {CSSColor} mSettings.valueColor The info text color, in CSS format
  */
 function ProgressDonut(mSettings) {
 	mSettings = mSettings instanceof Object ? mSettings : {};
 	this.$canvas = mSettings.$canvas;
+	this[min] = Number.isInteger(mSettings.min) ? mSettings.min : 0;
 	this[max] = Number.isInteger(mSettings.max) ? mSettings.max : 100;
 	this[value] = Number.isInteger(mSettings.value) ? mSettings.value : 0;
-	this[backgroundColor] = mSettings.backgroundColor;
-	this[color] = mSettings.color;
-	this[textColor] = mSettings.textColor;
+	this[lineWidth] = Number.isInteger(mSettings.lineWidth) ? mSettings.lineWidth : 3;
+	this[lineFill] = typeof mSettings.lineFill === "string" ? mSettings.lineFill : "#CCB566";
+	this[backLineFill] = typeof mSettings.backLineFill === "string" ? mSettings.backLineFill : "#FB6929";
+	this[bgFill] = typeof mSettings.bgFill === "string" ? mSettings.bgFill : "#F8FF8E";
+	this[showValue] = typeof mSettings.showValue === "boolean" ? mSettings.showValue : true;
+	this[valueStyle] = typeof mSettings.valueStyle === "string" ? mSettings.valueStyle : "bold " + this.radius * 0.8 + "px sans-serif";
+	this[valueColor] = typeof mSettings.valueColor === "string" ? mSettings.valueColor : "red";
 	return this.draw();
 }
+
+ProgressDonut.radians = function (nDeg) {
+	nDeg = Number(nDeg);
+	return !Number.isNaN(nDeg) ? nDeg * Math.PI/180 : 0;
+};
 
 ProgressDonut.prototype = Object.create(Object.prototype, {
 	constructor: {
@@ -88,6 +108,52 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 	/**
 	 * @public	property
 	 */
+	x: {
+		enumerable: true,
+		get: function () {
+			return this[ctx].canvas.width / 2;
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	y: {
+		enumerable: true,
+		get: function () {
+			return this[ctx].canvas.height / 2;
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	radius: {
+		enumerable: true,
+		get: function () {
+			return Math.min(this.x, this.y) - 10;
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	min: {
+		enumerable: true,
+		set: function (iMin) {
+			if (Number.isInteger(iMin)) {
+				this[min] = iMin;
+			}
+			return this.draw();
+		},
+		get: function () {
+			return this[min];
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
 	max: {
 		enumerable: true,
 		set: function (iMax) {
@@ -107,7 +173,7 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 	value: {
 		enumerable: true,
 		set: function (iValue) {
-			if (Number.isInteger(iValue)) {
+			if (Number.isInteger(iValue) && iValue >= this.min && iValue <= this.max) {
 				this[value] = iValue;
 			}
 			return this.draw();
@@ -120,42 +186,98 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 	/**
 	 * @public	property
 	 */
-	backgroundColor: {
+	lineWidth: {
 		enumerable: true,
-		set: function (sBackgroundColor) {
-			this[backgroundColor] = sBackgroundColor;
+		set: function (iLineWidth) {
+			this[lineWidth] = Number.isInteger(iLineWidth) ? Math.abs(iLineWidth) : this[lineWidth];
 			return this.draw();
 		},
 		get: function () {
-			return this[backgroundColor];
+			return this[lineWidth];
 		}
 	},
 
 	/**
 	 * @public	property
 	 */
-	color: {
+	lineFill: {
 		enumerable: true,
-		set: function (sColor) {
-			this[color] = sColor;
+		set: function (sLineFill) {
+			this[lineFill] = typeof sLineFill === "string" ? sLineFill : this[lineFill];
 			return this.draw();
 		},
 		get: function () {
-			return this[color];
+			return this[lineFill];
 		}
 	},
 
 	/**
 	 * @public	property
 	 */
-	textColor: {
+	backLineFill: {
 		enumerable: true,
-		set: function (sColor) {
-			this[textColor] = sColor;
+		set: function (sBackLineFill) {
+			this[backLineFill] = typeof sBackLineFill === "string" ? sBackLineFill : this[backLineFill];
 			return this.draw();
 		},
 		get: function () {
-			return this[textColor];
+			return this[backLineFill];
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	bgFill: {
+		enumerable: true,
+		set: function (sBgFill) {
+			this[bgFill] = typeof sBgFill === "string" ? sBgFill : this[bgFill];
+			return this.draw();
+		},
+		get: function () {
+			return this[bgFill];
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	showValue: {
+		enumerable: true,
+		set: function (bShowInfoText) {
+			this[showValue] = typeof bShowInfoText === "boolean" ? bShowInfoText : this[showValue];
+			return this.draw();
+		},
+		get: function () {
+			return this[showValue];
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	valueStyle: {
+		enumerable: true,
+		set: function (sInfoStyle) {
+			this[valueStyle] = typeof sInfoStyle === "string" ? sInfoStyle : this[valueStyle];
+			return this.draw();
+		},
+		get: function () {
+			return this[valueStyle];
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	valueColor: {
+		enumerable: true,
+		set: function (sInfoColor) {
+			this[valueColor] = typeof sInfoColor === "string" ? sInfoColor : this[valueColor];
+			return this.draw();
+		},
+		get: function () {
+			return this[valueColor];
 		}
 	},
 
@@ -165,23 +287,23 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 	draw: {
 		value: function () {
 			var ctx = this.context2d,
-				cx = ctx.canvas.width / 2,
-				cy = ctx.canvas.height / 2,
-				r = Math.min(cx, cy) - 20,
+				cx = this.x,
+				cy = this.y,
+				r = this.radius,
 				angle = - Math.PI / 2;
 
 			// clear the canvas
 			ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
 			// draw the shadow of the chart
-			ctx.shadowBlur = 2;
+			ctx.shadowBlur = 0;
 			ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
 			ctx.shadowOffsetX = 0;
 			ctx.shadowOffsetY = 0;
 
 			// draw the background
-			ctx.fillStyle = this.backgroundColor;
-			ctx.globalAlpha = 0.8;
+			ctx.fillStyle = this.backLineFill;
+			ctx.globalAlpha = 1;
 			ctx.beginPath();
 			ctx.moveTo(cx, cy);
 			ctx.arc(cx, cy, r, 0, 2 * Math.PI);
@@ -196,23 +318,24 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 
 			// draw the pie-chart slice
 			ctx.globalAlpha = 1;
-			drawPieSlice(ctx, cx, cy, r, angle, angle + 2 * Math.PI * this.value / this.max, this.color);
+			drawPieSlice(ctx, cx, cy, r, angle, angle + 2 * Math.PI * this.value / this.max, this.lineFill);
 
 			// draw the pie chart inner content
-			ctx.fillStyle = this.backgroundColor;
+			ctx.fillStyle = this.bgFill;
 			ctx.beginPath();
 			ctx.moveTo(cx, cy);
-			ctx.arc(cx, cy, r - 3, 0, 2 * Math.PI);
+			ctx.arc(cx, cy, r - this.lineWidth, 0, 2 * Math.PI);
 			ctx.closePath();
 			ctx.fill();
 
 			// draw the pie-chart's inner text
-			ctx.fillStyle = this.textColor;
-			ctx.font = `bold ${r * 0.8}px sans-serif`;
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText(this.value, cx, cy);
-
+			if (this.showValue === true) {
+				ctx.fillStyle = this.valueColor;
+				ctx.font = "bold " + r * 0.8 + "px sans-serif";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(this.value, cx, cy);
+			}
 			return this;
 		}
 	},

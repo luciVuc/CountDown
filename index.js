@@ -1,4 +1,4 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.CountDownApp = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.CountDown = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -305,6 +305,7 @@ function isUndefined(arg) {
 },{}],2:[function(require,module,exports){
 const Timer = require("./timer");
 const TimerView = require("./timerview");
+const ToggleSwitch = require("./widget/toggleSwitch");
 const storage = require("./storage");
 
 const view = Symbol("view");
@@ -533,7 +534,7 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 
 module.exports = CountDownApp;
 
-},{"./storage":6,"./timer":7,"./timerview":8}],3:[function(require,module,exports){
+},{"./storage":6,"./timer":7,"./timerview":8,"./widget/toggleSwitch":9}],3:[function(require,module,exports){
 const polyfills = require("./polyfills/details");
 const CountDownApp = require("./countdown");
 
@@ -680,33 +681,53 @@ function drawPieSlice(oContext, centerX, centerY, radius, startAngle, endAngle, 
 
 const $canvas = Symbol("$canvas");
 const ctx = Symbol("ctx");
+const min = Symbol("min");
 const max = Symbol("max");
 const value = Symbol("value");
-const backgroundColor = Symbol("backgroundColor");
-const color = Symbol("color");
-const textColor = Symbol("textColor");
+const lineWidth = Symbol("lineWidth");
+const lineFill = Symbol("lineFill");
+const backLineFill = Symbol("backLineFill");
+const bgFill = Symbol("bgFill");
+const showValue = Symbol("showValue");
+const valueStyle = Symbol("valueStyle");
+const valueColor = Symbol("valueColor");
 
 /**
  * @public	Displays a round, doughnut-like progress bar, using HTML canvas.
  * 
  * @param {object}	mSettings	Hashmap of instance values
  * @param {HTMLCanvasElement}	mSettings.$canvas	The HTML canvas element to draw on
- * @param {intenger} mSettings.max The maximum value
+ * @param {integer} mSettings.min The minimum value
+ * @param {integer} mSettings.max The maximum value
  * @param {integer} mSettings.value The current value
- * @param {CSSColor} mSettings.backgroundColor The background color, in CSS format
- * @param {CSSColor} mSettings.color The fore color in CSS format
- * @param {CSSColor} mSettings.textColor The text color in CSS format
+ * @param {integer} mSettings.lineWidth The width of the progress line
+ * @param {CSSColor} mSettings.lineFill The color of the progress line, in CSS format
+ * @param {CSSColor} mSettings.backLineFill The background color of the progress line, in CSS format
+ * @param {CSSColor} mSettings.bgFill The background color, in CSS format
+ * @param {boolean} mSettings.showValue Whether to show or not the info text
+ * @param {CSSFont} mSettings.valueStyle The info text font style, in CSS format
+ * @param {CSSColor} mSettings.valueColor The info text color, in CSS format
  */
 function ProgressDonut(mSettings) {
 	mSettings = mSettings instanceof Object ? mSettings : {};
 	this.$canvas = mSettings.$canvas;
+	this[min] = Number.isInteger(mSettings.min) ? mSettings.min : 0;
 	this[max] = Number.isInteger(mSettings.max) ? mSettings.max : 100;
 	this[value] = Number.isInteger(mSettings.value) ? mSettings.value : 0;
-	this[backgroundColor] = mSettings.backgroundColor;
-	this[color] = mSettings.color;
-	this[textColor] = mSettings.textColor;
+	this[lineWidth] = Number.isInteger(mSettings.lineWidth) ? mSettings.lineWidth : 3;
+	this[lineFill] = typeof mSettings.lineFill === "string" ? mSettings.lineFill : "#CCB566";
+	this[backLineFill] = typeof mSettings.backLineFill === "string" ? mSettings.backLineFill : "#FB6929";
+	this[bgFill] = typeof mSettings.bgFill === "string" ? mSettings.bgFill : "#F8FF8E";
+	this[showValue] = typeof mSettings.showValue === "boolean" ? mSettings.showValue : true;
+	this[valueStyle] = typeof mSettings.valueStyle === "string" ? mSettings.valueStyle : "bold " + this.radius * 0.8 + "px sans-serif";
+	this[valueColor] = typeof mSettings.valueColor === "string" ? mSettings.valueColor : "red";
 	return this.draw();
 }
+
+ProgressDonut.radians = function (nDeg) {
+	nDeg = Number(nDeg);
+	return !Number.isNaN(nDeg) ? nDeg * Math.PI/180 : 0;
+};
 
 ProgressDonut.prototype = Object.create(Object.prototype, {
 	constructor: {
@@ -745,6 +766,52 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 	/**
 	 * @public	property
 	 */
+	x: {
+		enumerable: true,
+		get: function () {
+			return this[ctx].canvas.width / 2;
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	y: {
+		enumerable: true,
+		get: function () {
+			return this[ctx].canvas.height / 2;
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	radius: {
+		enumerable: true,
+		get: function () {
+			return Math.min(this.x, this.y) - 10;
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	min: {
+		enumerable: true,
+		set: function (iMin) {
+			if (Number.isInteger(iMin)) {
+				this[min] = iMin;
+			}
+			return this.draw();
+		},
+		get: function () {
+			return this[min];
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
 	max: {
 		enumerable: true,
 		set: function (iMax) {
@@ -764,7 +831,7 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 	value: {
 		enumerable: true,
 		set: function (iValue) {
-			if (Number.isInteger(iValue)) {
+			if (Number.isInteger(iValue) && iValue >= this.min && iValue <= this.max) {
 				this[value] = iValue;
 			}
 			return this.draw();
@@ -777,42 +844,98 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 	/**
 	 * @public	property
 	 */
-	backgroundColor: {
+	lineWidth: {
 		enumerable: true,
-		set: function (sBackgroundColor) {
-			this[backgroundColor] = sBackgroundColor;
+		set: function (iLineWidth) {
+			this[lineWidth] = Number.isInteger(iLineWidth) ? Math.abs(iLineWidth) : this[lineWidth];
 			return this.draw();
 		},
 		get: function () {
-			return this[backgroundColor];
+			return this[lineWidth];
 		}
 	},
 
 	/**
 	 * @public	property
 	 */
-	color: {
+	lineFill: {
 		enumerable: true,
-		set: function (sColor) {
-			this[color] = sColor;
+		set: function (sLineFill) {
+			this[lineFill] = typeof sLineFill === "string" ? sLineFill : this[lineFill];
 			return this.draw();
 		},
 		get: function () {
-			return this[color];
+			return this[lineFill];
 		}
 	},
 
 	/**
 	 * @public	property
 	 */
-	textColor: {
+	backLineFill: {
 		enumerable: true,
-		set: function (sColor) {
-			this[textColor] = sColor;
+		set: function (sBackLineFill) {
+			this[backLineFill] = typeof sBackLineFill === "string" ? sBackLineFill : this[backLineFill];
 			return this.draw();
 		},
 		get: function () {
-			return this[textColor];
+			return this[backLineFill];
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	bgFill: {
+		enumerable: true,
+		set: function (sBgFill) {
+			this[bgFill] = typeof sBgFill === "string" ? sBgFill : this[bgFill];
+			return this.draw();
+		},
+		get: function () {
+			return this[bgFill];
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	showValue: {
+		enumerable: true,
+		set: function (bShowInfoText) {
+			this[showValue] = typeof bShowInfoText === "boolean" ? bShowInfoText : this[showValue];
+			return this.draw();
+		},
+		get: function () {
+			return this[showValue];
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	valueStyle: {
+		enumerable: true,
+		set: function (sInfoStyle) {
+			this[valueStyle] = typeof sInfoStyle === "string" ? sInfoStyle : this[valueStyle];
+			return this.draw();
+		},
+		get: function () {
+			return this[valueStyle];
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	valueColor: {
+		enumerable: true,
+		set: function (sInfoColor) {
+			this[valueColor] = typeof sInfoColor === "string" ? sInfoColor : this[valueColor];
+			return this.draw();
+		},
+		get: function () {
+			return this[valueColor];
 		}
 	},
 
@@ -822,23 +945,23 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 	draw: {
 		value: function () {
 			var ctx = this.context2d,
-				cx = ctx.canvas.width / 2,
-				cy = ctx.canvas.height / 2,
-				r = Math.min(cx, cy) - 20,
+				cx = this.x,
+				cy = this.y,
+				r = this.radius,
 				angle = - Math.PI / 2;
 
 			// clear the canvas
 			ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
 			// draw the shadow of the chart
-			ctx.shadowBlur = 2;
+			ctx.shadowBlur = 0;
 			ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
 			ctx.shadowOffsetX = 0;
 			ctx.shadowOffsetY = 0;
 
 			// draw the background
-			ctx.fillStyle = this.backgroundColor;
-			ctx.globalAlpha = 0.8;
+			ctx.fillStyle = this.backLineFill;
+			ctx.globalAlpha = 1;
 			ctx.beginPath();
 			ctx.moveTo(cx, cy);
 			ctx.arc(cx, cy, r, 0, 2 * Math.PI);
@@ -853,23 +976,24 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 
 			// draw the pie-chart slice
 			ctx.globalAlpha = 1;
-			drawPieSlice(ctx, cx, cy, r, angle, angle + 2 * Math.PI * this.value / this.max, this.color);
+			drawPieSlice(ctx, cx, cy, r, angle, angle + 2 * Math.PI * this.value / this.max, this.lineFill);
 
 			// draw the pie chart inner content
-			ctx.fillStyle = this.backgroundColor;
+			ctx.fillStyle = this.bgFill;
 			ctx.beginPath();
 			ctx.moveTo(cx, cy);
-			ctx.arc(cx, cy, r - 3, 0, 2 * Math.PI);
+			ctx.arc(cx, cy, r - this.lineWidth, 0, 2 * Math.PI);
 			ctx.closePath();
 			ctx.fill();
 
 			// draw the pie-chart's inner text
-			ctx.fillStyle = this.textColor;
-			ctx.font = `bold ${r * 0.8}px sans-serif`;
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText(this.value, cx, cy);
-
+			if (this.showValue === true) {
+				ctx.fillStyle = this.valueColor;
+				ctx.font = "bold " + r * 0.8 + "px sans-serif";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(this.value, cx, cy);
+			}
 			return this;
 		}
 	},
@@ -1257,6 +1381,7 @@ const $hrsEl = Symbol("$hrsEl");
 const $secsEl = Symbol("$secsEl");
 const timer = Symbol("timer");
 const supportsCanvas = Symbol("supportsCanvas");
+const hideZeroTiles = Symbol("hideZeroTiles");
 
 /**
  * @public	Tile visualization for a Timer object
@@ -1280,6 +1405,7 @@ function TimerView(mSettings) {
 	this.timer.on("stop", this._updateHandler);
 	this.timer.on("ready", this._updateHandler);
 	this[supportsCanvas] = HTMLCanvasElement && CanvasRenderingContext2D ? true : false;
+	this[hideZeroTiles] = mSettings.hideZeroTiles === true ? true : false;
 	return this;
 }
 
@@ -1350,6 +1476,20 @@ TimerView.prototype = Object.create(Object.prototype, {
 	},
 
 	/**
+	 * @public
+	 */
+	hideZeroTiles: {
+		enumerable: true,
+		set: function (bValue) {
+			this[hideZeroTiles] = bValue === true ? true : false;
+			return this;
+		},
+		get: function () {
+			return this[hideZeroTiles];
+		}
+	},
+
+	/**
 	 * @public	property
 	 */
 	timer: {
@@ -1404,6 +1544,21 @@ TimerView.prototype = Object.create(Object.prototype, {
 				this.$hrsEl.innerHTML = this.timer.minutesLeft;
 				this.$secsEl.innerHTML = this.timer.secondsLeft;
 			}
+
+			if (this.hideZeroTiles) {
+				this.$daysEl.parentElement.style.display = "";
+				this.$hrsEl.parentElement.style.display = "";
+				this.$minsEl.parentElement.style.display = "";
+				if (this.timer.daysLeft === 0) {
+					this.$daysEl.parentElement.style.display = "none";
+					if (this.timer.hoursLeft === 0) {
+						this.$hrsEl.parentElement.style.display = "none";
+						if (this.timer.minutesLeft === 0) {
+							this.$minsEl.parentElement.style.display = "none";
+						}
+					}
+				}
+			}
 			return this;
 		}
 	},
@@ -1436,10 +1591,10 @@ TimerView.prototype = Object.create(Object.prototype, {
 			this[$secsEl] = el.querySelector(".secs");
 
 			if (this.supportsCanvas) {
-				this._oDaysDonut = new ProgressDonut({ $canvas: this.$daysEl, max: this.timer.daysLeft, value: 0, backgroundColor: "white", color: "red", textColor: "#555555" });
-				this._oHrsDonut = new ProgressDonut({ $canvas: this.$hrsEl, max: this.timer.hoursLeft, value: 0, backgroundColor: "white", color: "green", textColor: "#555555" });
-				this._oMinsDonut = new ProgressDonut({ $canvas: this.$minsEl, max: this.timer.minutesLeft, value: 0, backgroundColor: "white", color: "blue", textColor: "#555555" });
-				this._oSecsDonut = new ProgressDonut({ $canvas: this.$secsEl, max: this.timer.secondsLeft, value: 0, backgroundColor: "white", color: "orange", textColor: "#555555" });
+				this._oDaysDonut = new ProgressDonut({ $canvas: this.$daysEl, max: this.timer.daysLeft, value: 0, bgFill: "white", lineFill: "red", backLineFill: "#dddddd", valueColor: "#777777" });
+				this._oHrsDonut = new ProgressDonut({ $canvas: this.$hrsEl, max: this.timer.hoursLeft, value: 0, bgFill: "white", lineFill: "green", backLineFill: "#dddddd", valueColor: "#777777" });
+				this._oMinsDonut = new ProgressDonut({ $canvas: this.$minsEl, max: this.timer.minutesLeft, value: 0, bgFill: "white", lineFill: "blue", backLineFill: "#dddddd", valueColor: "#777777" });
+				this._oSecsDonut = new ProgressDonut({ $canvas: this.$secsEl, max: this.timer.secondsLeft, value: 0, bgFill: "white", lineFill: "orange", backLineFill: "#dddddd", valueColor: "#777777" });
 			}
 			return this;
 		}
@@ -1471,5 +1626,297 @@ TimerView.prototype = Object.create(Object.prototype, {
 
 module.exports = TimerView;
 
-},{"./progress-donut":5,"./timer":7}]},{},[3])(3)
+},{"./progress-donut":5,"./timer":7}],9:[function(require,module,exports){
+const Widget = require("./widget");
+
+const label = Symbol("label");
+const description = Symbol("description");
+const name = Symbol("name");
+const checked = Symbol("checked");
+const onchange = Symbol("onchange");
+
+/**
+ * ToggleSwitch
+ * JS wrapper for HTML checkbox input, styled with CSS3 to look like a Toggle Switch.
+ */
+function ToggleSwitch(mSettings) {
+	mSettings = mSettings instanceof Object ? mSettings : {};
+	mSettings.id = mSettings.id || "__ToggleSwitch" + Date.now();
+	this[label] = typeof mSettings.label === "string" ? mSettings.label : "Switch " + this.id;
+	this[description] = typeof mSettings.label === "string" ? mSettings.description : this.label;
+	this[name] = typeof mSettings.label === "string" ? mSettings.name : this.id + "Checkbox";
+	this[checked] = !!mSettings.checked;
+	this[onchange] = typeof mSettings.onchange === "function" ? mSettings.onchange : null;
+	this._fChangeHandler = this._fChangeHandler.bind(this);
+	return Widget.apply(this, arguments);
+}
+
+ToggleSwitch.prototype = Object.create(Widget.prototype, {
+	constructor: {
+		value: ToggleSwitch
+	},
+
+	label: {
+		enumerable: true,
+		set: function (sLabel) {
+			this[label] = typeof sLabel === "string" ? sLabel : "";
+			return this;
+		},
+		get: function () {
+			return this[label];
+		}
+	},
+
+	description: {
+		enumerable: true,
+		set: function (sDescription) {
+			this[description] = typeof sDescription === "string" ? description : "";
+			return this;
+		},
+		get: function () {
+			return this[description];
+		}
+	},
+
+	name: {
+		enumerable: true,
+		set: function (sName) {
+			this[name] = typeof sName === "string" ? sName : "";
+			return this;
+		},
+		get: function () {
+			return this[name];
+		}
+	},
+
+	checked: {
+		enumerable: true,
+		set: function (bChecked) {
+			this[checked] = !!bChecked;
+			return this;
+		},
+		get: function () {
+			return this[checked];
+		}
+	},
+
+	onchange: {
+		enumerable: true,
+		set: function (fn) {
+			if (fn === null || typeof fn === "function") {
+				this[onchange] = fn;
+			}
+			return this;
+		},
+		get: function () {
+			return this[onchange];
+		}
+	},
+
+	changeHandler: {
+		value: function ($Event) {
+			var oEvent = {
+				source: this,
+				sourceEvent: $Event
+			};
+			this.emit("change", oEvent);
+			if (typeof this.onchange === "function") {
+				this.onchange(oEvent);
+			}
+			return this;
+		}
+	},
+
+	getElementTemplate: {
+		value: function () {
+			var checked = this.checked ? "checked" : "";
+
+			return `<input type="checkbox" id="switchWidget${this.id}Checkbox" name="${this.name}" class="widget switch-checkbox" ${checked} data-label="${this.label}" title="${this.description}"/>`;
+		}
+	},
+
+	postRender: {
+		enumerable: true,
+		value: function () {
+			this.$el.querySelector("input[type=checkbox]").addEventListener("change", this._fChangeHandler);
+			return Widget.prototype.postRender.apply(this, arguments);
+		}
+	}
+});
+
+module.exports = ToggleSwitch;
+},{"./widget":10}],10:[function(require,module,exports){
+const EventEmitter = require("events");
+
+const id = Symbol("id");
+const $el = Symbol("$el");
+// const htmlEvents = Symbol("htmlEvents");
+
+/**
+ * Widget
+ * Base JS class for wrapping HTML elements styled with CSS3.
+ */
+function Widget (mSettings) {
+  EventEmitter.apply(this, arguments);
+  mSettings = mSettings instanceof Object ? mSettings : {};
+  // mSettings.events = mSettings.events instanceof Object ? mSettings.events : {};
+  
+	this[$el] = mSettings.$el instanceof HTMLElement ? mSettings.$el : document.createElement("div");
+	this[id] = this.$el.id || mSettings.id || "__CSS3Widget" + Date.now();
+	// this._initEvents(mSettings.events);
+	this.render();
+  return this;
+}
+
+Widget.prototype = Object.create(EventEmitter.prototype, {
+  constructor: {
+		enumerable: true,
+    value: Widget
+  },
+
+	id: {
+		enumerable: true,
+		get: function () {
+			return this[id];
+		}
+	},  
+
+	// htmlEvents: {
+	// 	get: function () {
+	// 		return this[htmlEvents];
+	// 	}
+	// },  
+
+	$el: {
+		enumerable: true,
+		set: function ($El) {
+			if ($El instanceof HTMLElement) {
+				this[$el] = $El;
+			}
+			return this;
+		},
+		get: function () {
+			return this[$el];
+		}
+	},
+
+  getElementTemplate: {
+		enumerable: true,
+    value: function () {
+      return `<div id="${this.id}-inner" class="widget"></div>`;
+    }
+  },
+
+	// hasClass: {
+	// 	enumerable: true,
+	// 	value: function () {
+	// 		return false;
+	// 	}
+	// },
+
+	// addClass: {
+	// 	enumerable: true,
+	// 	value: function () {
+	// 		return false;
+	// 	}
+	// },
+
+	// removeClass: {
+	// 	enumerable: true,
+	// 	value: function () {
+	// 		return false;
+	// 	}
+	// },
+
+	// toggleClass: {
+	// 	enumerable: true,
+	// 	value: function () {
+	// 		return false;
+	// 	}
+	// },
+
+
+// document.getElementById("MyElement").classList.add('MyClass');
+
+// document.getElementById("MyElement").classList.remove('MyClass');
+
+// if ( document.getElementById("MyElement").classList.contains('MyClass') )
+
+// document.getElementById("MyElement").classList.toggle('MyClass');
+
+	preRender: {
+		enumerable: true,
+		value: function () {
+			return this;
+		}
+	},
+
+	postRender: {
+		enumerable: true,
+		value: function () {
+			return this;
+		}
+	},
+
+  render: {
+		enumerable: true,
+    value: function () {
+			this.preRender();
+      this[$el] = this.$el instanceof HTMLElement ? this.$el : document.createElement("div");
+      // this.onRender();
+			// this._attachEventListeners();
+			this.$el.setAttribute("id", this.id);
+			this.$el.classList.add("widget-wrapper");
+			this.$el.innerHTML = this.getElementTemplate();
+			setTimeout(this.postRender.bind(this), 1);
+      return this;
+    }
+  },
+
+	destroy: {
+		enumerable: true,
+		value: function () {
+
+		}
+	}
+  
+  // _initEvents: {
+  //   value: function (mEvents) {
+  //     this[htmlEvents] = {};
+  //     for (var e in mEvents) {
+  //       if (mEvents.hasOwnProperty(e) && mEvents[e] instanceof Object && typeof mEvents[e].handler === "function") {
+  //         this.htmlEvents[e] = {
+  //           eventType: e,
+  //           cssSelector: mEvents[e].cssSelector || null,
+  //           handler: mEvents[e].handler
+  //         };
+  //       }
+  //     }
+  //     return this;
+  //   }
+  // },
+
+  // _attachEventListeners: {
+  //   value: function () {
+  //     var $el;
+  //     for (var e in this.htmlEvents) {
+  //       if (this.htmlEvents.hasOwnProperty(e) && this.htmlEvents[e] instanceof Object && typeof this.htmlEvents[e].eventType === "string" && this.htmlEvents[e].eventType.length > 0 && typeof this.htmlEvents[e].handler === "function") {
+  //         if (this.htmlEvents[e].cssSelector) {
+  //           $el = this.$el.querySelector(this.htmlEvents[e].cssSelector);
+  //           if ($el instanceof HTMLElement) {
+  //             $el.addEventListener(this.htmlEvents[e].eventType, this.htmlEvents[e].handler);
+  //           }
+  //         } else {
+  //           this.$el.addEventListener(this.htmlEvents[e].eventType, this.htmlEvents[e].handler);
+  //         }
+  //       }
+  //     }
+  //     return this;
+  //   }
+  // },
+  
+});
+
+module.exports = Widget;
+},{"events":1}]},{},[3])(3)
 });

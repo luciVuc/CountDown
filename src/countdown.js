@@ -1,5 +1,6 @@
 const Timer = require("./timer");
 const TimerView = require("./timerview");
+const ToggleSwitch = require("./widget/toggleSwitch");
 const storage = require("./storage");
 
 const view = Symbol("view");

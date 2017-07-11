@@ -8,6 +8,7 @@ const $hrsEl = Symbol("$hrsEl");
 const $secsEl = Symbol("$secsEl");
 const timer = Symbol("timer");
 const supportsCanvas = Symbol("supportsCanvas");
+const hideZeroTiles = Symbol("hideZeroTiles");
 
 /**
  * @public	Tile visualization for a Timer object
@@ -31,6 +32,7 @@ function TimerView(mSettings) {
 	this.timer.on("stop", this._updateHandler);
 	this.timer.on("ready", this._updateHandler);
 	this[supportsCanvas] = HTMLCanvasElement && CanvasRenderingContext2D ? true : false;
+	this[hideZeroTiles] = mSettings.hideZeroTiles === true ? true : false;
 	return this;
 }
 
@@ -101,6 +103,20 @@ TimerView.prototype = Object.create(Object.prototype, {
 	},
 
 	/**
+	 * @public
+	 */
+	hideZeroTiles: {
+		enumerable: true,
+		set: function (bValue) {
+			this[hideZeroTiles] = bValue === true ? true : false;
+			return this;
+		},
+		get: function () {
+			return this[hideZeroTiles];
+		}
+	},
+
+	/**
 	 * @public	property
 	 */
 	timer: {
@@ -155,6 +171,21 @@ TimerView.prototype = Object.create(Object.prototype, {
 				this.$hrsEl.innerHTML = this.timer.minutesLeft;
 				this.$secsEl.innerHTML = this.timer.secondsLeft;
 			}
+
+			if (this.hideZeroTiles) {
+				this.$daysEl.parentElement.style.display = "";
+				this.$hrsEl.parentElement.style.display = "";
+				this.$minsEl.parentElement.style.display = "";
+				if (this.timer.daysLeft === 0) {
+					this.$daysEl.parentElement.style.display = "none";
+					if (this.timer.hoursLeft === 0) {
+						this.$hrsEl.parentElement.style.display = "none";
+						if (this.timer.minutesLeft === 0) {
+							this.$minsEl.parentElement.style.display = "none";
+						}
+					}
+				}
+			}
 			return this;
 		}
 	},
@@ -187,10 +218,10 @@ TimerView.prototype = Object.create(Object.prototype, {
 			this[$secsEl] = el.querySelector(".secs");
 
 			if (this.supportsCanvas) {
-				this._oDaysDonut = new ProgressDonut({ $canvas: this.$daysEl, max: this.timer.daysLeft, value: 0, backgroundColor: "white", color: "red", textColor: "#555555" });
-				this._oHrsDonut = new ProgressDonut({ $canvas: this.$hrsEl, max: this.timer.hoursLeft, value: 0, backgroundColor: "white", color: "green", textColor: "#555555" });
-				this._oMinsDonut = new ProgressDonut({ $canvas: this.$minsEl, max: this.timer.minutesLeft, value: 0, backgroundColor: "white", color: "blue", textColor: "#555555" });
-				this._oSecsDonut = new ProgressDonut({ $canvas: this.$secsEl, max: this.timer.secondsLeft, value: 0, backgroundColor: "white", color: "orange", textColor: "#555555" });
+				this._oDaysDonut = new ProgressDonut({ $canvas: this.$daysEl, max: this.timer.daysLeft, value: 0, bgFill: "white", lineFill: "red", backLineFill: "#dddddd", valueColor: "#777777" });
+				this._oHrsDonut = new ProgressDonut({ $canvas: this.$hrsEl, max: this.timer.hoursLeft, value: 0, bgFill: "white", lineFill: "green", backLineFill: "#dddddd", valueColor: "#777777" });
+				this._oMinsDonut = new ProgressDonut({ $canvas: this.$minsEl, max: this.timer.minutesLeft, value: 0, bgFill: "white", lineFill: "blue", backLineFill: "#dddddd", valueColor: "#777777" });
+				this._oSecsDonut = new ProgressDonut({ $canvas: this.$secsEl, max: this.timer.secondsLeft, value: 0, bgFill: "white", lineFill: "orange", backLineFill: "#dddddd", valueColor: "#777777" });
 			}
 			return this;
 		}
