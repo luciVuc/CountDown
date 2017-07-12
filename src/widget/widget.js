@@ -87,7 +87,7 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 	destroy: {
 		enumerable: true,
 		value: function () {
-			this.off("onchange");
+			return this;
 		}
 	}  
 });

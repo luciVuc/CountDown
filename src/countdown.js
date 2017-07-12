@@ -72,7 +72,7 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 				label: "Hide Zero tiles",
 				name: "hideZeroTiles",
 				checked: true,
-				onchange: function (oEvent) {
+				ontoggle: function (oEvent) {
 					this.view.hideZeroTiles = oEvent.checked;
 				}.bind(this)
 			});
