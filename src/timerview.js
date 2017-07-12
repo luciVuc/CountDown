@@ -109,7 +109,7 @@ TimerView.prototype = Object.create(Object.prototype, {
 		enumerable: true,
 		set: function (bValue) {
 			this[hideZeroTiles] = bValue === true ? true : false;
-			return this;
+			return this.update();
 		},
 		get: function () {
 			return this[hideZeroTiles];
@@ -172,10 +172,10 @@ TimerView.prototype = Object.create(Object.prototype, {
 				this.$secsEl.innerHTML = this.timer.secondsLeft;
 			}
 
+			this.$daysEl.parentElement.style.display = "";
+			this.$hrsEl.parentElement.style.display = "";
+			this.$minsEl.parentElement.style.display = "";
 			if (this.hideZeroTiles) {
-				this.$daysEl.parentElement.style.display = "";
-				this.$hrsEl.parentElement.style.display = "";
-				this.$minsEl.parentElement.style.display = "";
 				if (this.timer.daysLeft === 0) {
 					this.$daysEl.parentElement.style.display = "none";
 					if (this.timer.hoursLeft === 0) {

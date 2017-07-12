@@ -10,9 +10,11 @@ const $settingsMenu = Symbol("$settingsMenu");
 const $finalDateTime = Symbol("$finalDateTime");
 const $ongoingMsg = Symbol("$ongoingMsg");
 const $finalMsg = Symbol("$finalMsg");
+const $hideZeroTiles = Symbol("$hideZeroTiles");
 const $okBtn = Symbol("$okBtn");
 const $resetBtn = Symbol("$resetBtn");
 const $status = Symbol("$status");
+const oHideZeroTile = Symbol("oHideZeroTile");
 const aElements = [
 	$wrapper,
 	$lblDisplay,
@@ -20,6 +22,7 @@ const aElements = [
 	$finalDateTime,
 	$ongoingMsg,
 	$finalMsg,
+	$hideZeroTiles,
 	$okBtn,
 	$resetBtn,
 	$status
@@ -64,6 +67,16 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 				this[aElements[i]] = mSettings[str];
 			}
 
+			this[oHideZeroTile] = new ToggleSwitch({
+				$el: this[$hideZeroTiles],
+				label: "Hide Zero tiles",
+				name: "hideZeroTiles",
+				checked: true,
+				onchange: function (oEvent) {
+					this.view.hideZeroTiles = oEvent.checked;
+				}.bind(this)
+			});
+
 			this[$wrapper].appendChild(this.view.render().$el);
 			this._bindEvents();
 			this._loadData();
@@ -86,6 +99,7 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 				this[$finalMsg].value = data.finalText;
 				this[$lblDisplay].innerHTML = this[$finalMsg].value;
 				this[$status].innerHTML = "";
+				this[oHideZeroTile].checked = data.hideZeroTiles;
 			}
 			return this;
 		}

@@ -1,5 +1,6 @@
 const Widget = require("./widget");
 
+const $inputEl = Symbol("$inputEl");
 const label = Symbol("label");
 const description = Symbol("description");
 const name = Symbol("name");
@@ -11,20 +12,35 @@ const onchange = Symbol("onchange");
  * JS wrapper for HTML checkbox input, styled with CSS3 to look like a Toggle Switch.
  */
 function ToggleSwitch(mSettings) {
-	mSettings = mSettings instanceof Object ? mSettings : {};
-	mSettings.id = mSettings.id || "__ToggleSwitch" + Date.now();
-	this[label] = typeof mSettings.label === "string" ? mSettings.label : "Switch " + this.id;
-	this[description] = typeof mSettings.label === "string" ? mSettings.description : this.label;
-	this[name] = typeof mSettings.label === "string" ? mSettings.name : this.id + "Checkbox";
-	this[checked] = !!mSettings.checked;
-	this[onchange] = typeof mSettings.onchange === "function" ? mSettings.onchange : null;
-	this._fChangeHandler = this._fChangeHandler.bind(this);
+	this[$inputEl] = null;
+	this._fChangeHandler = this.changeHandler.bind(this);
 	return Widget.apply(this, arguments);
 }
 
 ToggleSwitch.prototype = Object.create(Widget.prototype, {
 	constructor: {
 		value: ToggleSwitch
+	},
+
+	init: {
+		enumerable: true,
+		value: function (mSettings) {
+			Widget.prototype.init.apply(this, arguments);
+			// mSettings.id = this.$el.id || mSettings.id || "__ToggleSwitch" + Date.now();
+			this[label] = typeof mSettings.label === "string" ? mSettings.label : "Switch " + this.id;
+			this[description] = typeof mSettings.label === "string" ? mSettings.description : this.label;
+			this[name] = typeof mSettings.label === "string" ? mSettings.name : this.id + "Checkbox";
+			this[checked] = !!mSettings.checked;
+			this[onchange] = typeof mSettings.onchange === "function" ? mSettings.onchange : null;
+			return this;
+		}
+	},
+
+	$inputEl: {
+		enumerable: true,
+		get: function () {
+			return this[$inputEl];
+		}
 	},
 
 	label: {
@@ -64,6 +80,10 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 		enumerable: true,
 		set: function (bChecked) {
 			this[checked] = !!bChecked;
+			if (this.$inputEl instanceof HTMLInputElement) {
+				this.$inputEl.checked = this.checked;
+				this.$inputEl.change();
+			}
 			return this;
 		},
 		get: function () {
@@ -87,6 +107,7 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 	changeHandler: {
 		value: function ($Event) {
 			var oEvent = {
+				checked: $Event.target.checked,
 				source: this,
 				sourceEvent: $Event
 			};
@@ -102,14 +123,17 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 		value: function () {
 			var checked = this.checked ? "checked" : "";
 
-			return `<input type="checkbox" id="switchWidget${this.id}Checkbox" name="${this.name}" class="widget switch-checkbox" ${checked} data-label="${this.label}" title="${this.description}"/>`;
+			return `<input type="checkbox" id="${this.id}-Checkbox" name="${this.name}" class="widget switch-checkbox" ${checked} data-label="${this.label}" title="${this.description}"/>`;
 		}
 	},
 
 	postRender: {
 		enumerable: true,
 		value: function () {
-			this.$el.querySelector("input[type=checkbox]").addEventListener("change", this._fChangeHandler);
+			this[$inputEl] = this.$el.querySelector("input[type=checkbox]");
+			this.$inputEl.addEventListener("change", this._fChangeHandler);
+			this.$el.classList.add("switch");
+			this.$el.setAttribute("data-label", this.label);
 			return Widget.prototype.postRender.apply(this, arguments);
 		}
 	}

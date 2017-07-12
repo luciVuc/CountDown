@@ -34,7 +34,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			var m = {
 				final: Number.isInteger(json.final) ? json.final : Date.now(),
 				ongoingText: typeof json.ongoingText === "string" ? json.ongoingText : "Remaining Time",
-				finalText: typeof json.finalText === "string" ? json.finalText : "Done"
+				finalText: typeof json.finalText === "string" ? json.finalText : "Done",
+				hideZeroTiles: typeof json.hideZeroTiles === "boolean" ? json.hideZeroTiles : false
 			};
 			return m;
 		}
@@ -55,7 +56,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			var m = {
 				final: Number.isInteger(mJSON.final) ? mJSON.final : null,
 				ongoingText: typeof mJSON.ongoingText === "string" ? mJSON.ongoingText : "Remaining Time",
-				finalText: typeof mJSON.finalText === "string" ? mJSON.finalText : "Done"
+				finalText: typeof mJSON.finalText === "string" ? mJSON.finalText : "Done",
+				hideZeroTiles: typeof mJSON.hideZeroTiles === "boolean" ? mJSON.hideZeroTiles : false
 			};
 			localStorage.setItem(sKey, JSON.stringify(m));
 			return this;
@@ -71,7 +73,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			var m = {
 				final: null,
 				ongoingText: "Remaining Time",
-				finalText: "Done"
+				finalText: "Done",
+				hideZeroTiles: false
 			};
 			localStorage.setItem(sKey, JSON.stringify(m));
 			return this;

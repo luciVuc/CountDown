@@ -13,6 +13,7 @@ window.onload = function () {
 		$finalDateTime: document.querySelector("#finalDateTime"),
 		$ongoingMsg: document.querySelector("#ongoingMsg"),
 		$finalMsg: document.querySelector("#finalMsg"),
+		$hideZeroTiles: document.querySelector("#hideZeroTiles"),		
 		$okBtn: document.querySelector("#okBtn"),
 		$resetBtn: document.querySelector("#resetBtn"),
 		$status: document.querySelector("#status")
