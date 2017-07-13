@@ -53,7 +53,7 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
   getElementTemplate: {
 		enumerable: true,
     value: function () {
-      return `<div id="${this.id}-inner" class="widget"></div>`;
+      return `<div id="${this.id}-inner" class="widget-inner"></div>`;
     }
   },
 
@@ -77,7 +77,7 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 			this.preRender();
       this[$el] = this.$el instanceof HTMLElement ? this.$el : document.createElement("div");
 			this.$el.setAttribute("id", this.id);
-			this.$el.classList.add("widget-wrapper");
+			this.$el.classList.add("widget");
 			this.$el.innerHTML = this.getElementTemplate();
 			setTimeout(this.postRender.bind(this), 1);
       return this;
