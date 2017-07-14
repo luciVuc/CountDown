@@ -79,7 +79,8 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 			this.$el.setAttribute("id", this.id);
 			this.$el.classList.add("widget");
 			this.$el.innerHTML = this.getElementTemplate();
-			setTimeout(this.postRender.bind(this), 1);
+			this.postRender();
+			// setTimeout(this.postRender.bind(this), 1);
       return this;
     }
   },

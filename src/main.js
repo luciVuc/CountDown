@@ -1,4 +1,4 @@
-const polyfills = require("./polyfills/details");
+const polyfills = require("./polyfills/index");
 const CountDownApp = require("./countdown");
 
 /**

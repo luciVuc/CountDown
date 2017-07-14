@@ -4,7 +4,7 @@ const $inputEl = Symbol("$inputEl");
 const label = Symbol("label");
 const description = Symbol("description");
 const name = Symbol("name");
-const checked = Symbol("checked");
+const state = Symbol("state");
 const ontoggle = Symbol("ontoggle");
 
 /**
@@ -30,7 +30,7 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 			this[label] = typeof mSettings.label === "string" ? mSettings.label : "Switch " + this.id;
 			this[description] = typeof mSettings.label === "string" ? mSettings.description : this.label;
 			this[name] = typeof mSettings.label === "string" ? mSettings.name : this.id + "Checkbox";
-			this[checked] = !!mSettings.checked;
+			this[state] = !mSettings.state ? 0 : 1;
 			this[ontoggle] = typeof mSettings.ontoggle === "function" ? mSettings.ontoggle : null;
 			return this;
 		}
@@ -76,18 +76,30 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 		}
 	},
 
-	checked: {
+	state: {
 		enumerable: true,
-		set: function (bChecked) {
-			this[checked] = !!bChecked;
-			if (this.$inputEl instanceof HTMLInputElement) {
-				this.$inputEl.checked = this.checked;
+		set: function (iValue) {
+			this[state] = !!iValue ? 1 : 0;
+			if (!(this.$inputEl instanceof HTMLInputElement)) {
+				this.render();
+			}
+			if (this.$inputEl instanceof HTMLInputElement && this.$inputEl.checked !== !!this.state) {
+				this.$inputEl.checked = !!this.state;
+				var event = document.createEvent("HTMLEvents");
+				event.initEvent('change', false, true);
+				this.$inputEl.dispatchEvent(event);
 			}
 			return this;
 		},
 		get: function () {
-			// return this[checked];
-			return this.$inputEl && this.$inputEl.checked;
+			return this[state];
+		}
+	},
+
+	stateValue: {
+		enumerable: true,
+		get: function () {
+			return ToggleSwitch.STATES[this.state];
 		}
 	},
 
@@ -106,8 +118,12 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 
 	toggleHandler: {
 		value: function ($Event) {
+			if (this.$inputEl instanceof HTMLInputElement) {
+				this.state = !!this.$inputEl.checked ? 1 : 0;
+			}
 			var oEvent = {
-				checked: $Event.target.checked,
+				targetChecked: $Event.target.checked,
+				state: this.state,
 				source: this,
 				sourceEvent: $Event
 			};
@@ -119,9 +135,17 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 		}
 	},
 
+	toggle: {
+		enumerable: true,
+		value: function () {
+			this.state = (this.state + 1) % 2;
+			return this;
+		}
+	},
+
 	getElementTemplate: {
 		value: function () {
-			var checked = this.checked ? "checked" : "";
+			var checked = this.state ? "checked" : "";
 
 			return `<input type="checkbox" id="${this.id}-Checkbox" name="${this.name}" class="widget switch-checkbox" ${checked} data-label="${this.label}" title="${this.description}"/>`;
 		}
@@ -142,7 +166,7 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 		value: function () {
 			this[$inputEl] = this.$el.querySelector("input[type=checkbox]");
 			this.$inputEl.addEventListener("change", this._fToggleHandler);
-			this.$inputEl.checked = this.checked;
+			this.$inputEl.checked = !!this.state;
 			this.$el.classList.add("switch");
 			this.$el.setAttribute("data-label", this.label);
 			return Widget.prototype.postRender.apply(this, arguments);
@@ -160,5 +184,10 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 	},
 
 });
+
+ToggleSwitch.STATES = {
+	0: "Off",
+	1: "On"
+};
 
 module.exports = ToggleSwitch;
