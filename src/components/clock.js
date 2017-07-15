@@ -8,9 +8,19 @@ function Clock (mSettings) {
   this[props] = {};
   EventEmitter.apply(this, arguments);
   this.dateTimeFormat = mSettings.dateTimeFormat instanceof Intl.DateTimeFormat ? mSettings.dateTimeFormat : new Intl.DateTimeFormat([], {hour: '2-digit', minute: '2-digit'});
-  this.state = this.getClockState(new Date());
+  this.state = Clock.getClockState(new Date(), this.dateTimeFormat);
   return this;
 }
+
+Clock.getClockState = function (oDate, oDateTimeFormat) {
+  if (oDate instanceof Date && oDateTimeFormat instanceof Intl.DateTimeFormat) {
+    return new ClockState({
+      date: oDate,
+      dateTimeFormat: oDateTimeFormat
+    });
+  }
+  return null;
+};
 
 Clock.prototype = Object.create(EventEmitter.prototype, {
   constructor: {
@@ -70,7 +80,7 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     enumerable: true,
     value: function (oDate) {
       if (oDate instanceof Date) {
-        return Math.floor(date / 1000 / 60);
+        return Math.floor(oDate.valueOf() / 1000 / 60);
       }
       throw new Error("Invalid argument: Argument must be a Date");
     }
@@ -81,25 +91,12 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     value: function () {
       const now = new Date();
       if (this.getMinutes(this.state.date) !== this.getMinutes(now)) {
-        this.setState(this.getClockState(now));
+        this.state = Clock.getClockState(now, this.dateTimeFormat);
       }
     }
   },
 
-  getClockState: {
-    enumerable: true,
-    value: function (oNow) {
-      if (oNow instanceof Date) {
-        return new ClockState({
-          date: oNow,
-          dateTimeFormat: this.dateTimeFormat
-        });
-      }
-      return null;
-    }
-  },
-
-  componentDidMount: {
+  start: {
     enumerable: true,
     value: function () {
       window.setInterval(this.maybeUpdateClock.bind(this), 2000);

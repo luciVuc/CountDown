@@ -93,6 +93,7 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 			this._bindEvents();
 			this._loadData();
 			this.timer.start();
+			this.clockView.clock.start();
 			return this;
 		}
 	},
