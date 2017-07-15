@@ -1,31 +1,27 @@
-const Timer = require("./timer");
-const TimerView = require("./timerview");
-const ToggleSwitch = require("./widget/toggleSwitch");
-const storage = require("./storage");
+const Timer = require("./components/timer");
+const TimerView = require("./ui/timerview");
+const ClockView = require("./ui/clockview");
+const ToggleSwitch = require("./ui/widgets").ToggleSwitch;
+const storage = require("./components/storage");
+const backgrounds = require("../data/backgrounds");
 
-const view = Symbol("view");
-const $wrapper = Symbol("$wrapper");
-const $lblDisplay = Symbol("$lblDisplay");
-const $settingsMenu = Symbol("$settingsMenu");
-const $finalDateTime = Symbol("$finalDateTime");
-const $ongoingMsg = Symbol("$ongoingMsg");
-const $finalMsg = Symbol("$finalMsg");
-const $hideZeroTiles = Symbol("$hideZeroTiles");
-const $okBtn = Symbol("$okBtn");
-const $resetBtn = Symbol("$resetBtn");
-const $status = Symbol("$status");
-const oHideZeroTilesSwitch = Symbol("oHideZeroTilesSwitch");
+const props = Symbol("props");
 const aElements = [
-	$wrapper,
-	$lblDisplay,
-	$settingsMenu,
-	$finalDateTime,
-	$ongoingMsg,
-	$finalMsg,
-	$hideZeroTiles,
-	$okBtn,
-	$resetBtn,
-	$status
+	"$wrapper",
+	"$countDown",
+	"$lblDisplay",
+	"$settingsMenu",
+	"$finalDateTime",
+	"$ongoingMsg",
+	"$finalMsg",
+	"$hideZeroTiles",
+	"$okBtn",
+	"$resetBtn",
+	"$infoBar",
+	"$photoBy",
+	"$photoOwner",
+	"$photoName",
+	"$status"
 ];
 
 /**
@@ -36,16 +32,28 @@ const aElements = [
  * @returns {CountDownApp} self reference
  */
 function CountDownApp(mSettings) {
+	mSettings = mSettings instanceof Object ? mSettings : {};
+
 	// define own event handlers
-	this.okClickHandler = this._onOkClick.bind(this);
-	this.resetClickHandler = this._onResetClick.bind(this);
-	this.startHandler = this._onCountDownStart.bind(this);
-	this.stopHandler = this._onCountDownStop.bind(this);
+	this.okClickHandler = this.onOkClick.bind(this);
+	this.resetClickHandler = this.onResetClick.bind(this);
+	this.countDownStartHandler = this.onCountDownStart.bind(this);
+	this.countDownStopHandler = this.onCountDownStop.bind(this);
 
 	// initialize the model and the view
-	this[view] = new TimerView(mSettings);
+	this[props] = {};
+	this[props].view = new TimerView(mSettings.view);
+	this[props].clockView = new ClockView(mSettings.clockView);
 	return this.init(mSettings);
 }
+
+CountDownApp.getRandomaBackgroundImage = function () {
+	var iRnd = Math.floor(Math.random() * (backgrounds.length - 0) + 0);
+	return backgrounds.filter(function (o, i, arr) {
+		return i === iRnd;
+	})[0];
+};
+
 
 CountDownApp.prototype = Object.create(Object.prototype, {
 	constructor: {
@@ -62,13 +70,14 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 			mSettings = mSettings instanceof Object ? mSettings : {};
 
 			// init UI
-			for (var i = 0, str; i < aElements.length; i++) {
-				str = aElements[i].toString().replace("Symbol", "").replace("(", "").replace(")", "").trim();
-				this[aElements[i]] = mSettings[str];
+			for (var i = 0, $el; i < aElements.length; i++) {
+				$el = mSettings[aElements[i]];
+				this[props][aElements[i]] = $el instanceof HTMLElement ? $el : document.createElement("div");
 			}
 
-			this[oHideZeroTilesSwitch] = new ToggleSwitch({
-				$el: this[$hideZeroTiles],
+			// init toggle switch on the settings box
+			this[props].oHideZeroTilesSwitch = new ToggleSwitch({
+				$el: this[props].$hideZeroTiles,
 				label: "Hide Zero tiles",
 				name: "hideZeroTiles",
 				state: 0,
@@ -77,7 +86,10 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 				}.bind(this)
 			});
 
-			this[$wrapper].appendChild(this.view.render().$el);
+			this.backgroundImage = null;
+			this[props].$wrapper.style.backgroundImage = `url(${this.backgroundImage.source})`;
+			this[props].$countDown.appendChild(this.view.render().$el);
+			this[props].$infoBar.appendChild(this.clockView.render().$el);
 			this._bindEvents();
 			this._loadData();
 			this.timer.start();
@@ -94,13 +106,29 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 			if (data !== null) {
 				var date = Number.isInteger(data.final) ? new Date(data.final) : new Date();
 				this.timer.final = date;
-				this[$finalDateTime].value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().replace(/\.[0-9]{3}Z/, "");
-				this[$ongoingMsg].value = data.ongoingText;
-				this[$finalMsg].value = data.finalText;
-				this[$lblDisplay].innerHTML = this[$finalMsg].value;
-				this[$status].innerHTML = "";
-				this[oHideZeroTilesSwitch].state = data.hideZeroTiles ? 1 : 0;
+				this[props].$finalDateTime.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().replace(/\.[0-9]{3}Z/, "");
+				this[props].$ongoingMsg.value = data.ongoingText;
+				this[props].$finalMsg.value = data.finalText;
+				this[props].$lblDisplay.innerHTML = this[props].$finalMsg.value;
+				this[props].$status.innerHTML = "";
+				this[props].oHideZeroTilesSwitch.state = data.hideZeroTiles ? 1 : 0;
 			}
+			return this;
+		}
+	},
+
+	openSettingsMenu: {
+		enumerable: true,
+		value: function () {
+			this[props].$settingsMenu.open = true;
+			return this;
+		}
+	},
+
+	closeSettingsMenu: {
+		enumerable: true,
+		value: function () {
+			this[props].$settingsMenu.open = false;
 			return this;
 		}
 	},
@@ -137,19 +165,44 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	view: {
 		enumerable: true,
 		get: function () {
-			return this[view];
+			return this[props].view;
 		}
 	},
 
+	/**
+	 * @public	The ClockView property
+	 */
+	clockView: {
+		enumerable: true,
+		get: function () {
+			return this[props].clockView;
+		}
+	},
+
+	/**
+	 * @public	The ClockView property
+	 */
+	backgroundImage: {
+		enumerable: true,
+		set: function () {
+			this[props].backgroundImage = CountDownApp.getRandomaBackgroundImage();
+			return this;
+		},
+		get: function () {
+			return this[props].backgroundImage;
+		}
+	},
+
+	/**
 	/**
 	 * @private
 	 */
 	_bindEvents: {
 		value: function () {
-			this[$okBtn].addEventListener("click", this.okClickHandler);
-			this[$resetBtn].addEventListener("click", this.resetClickHandler);
-			this.timer.on("start", this.startHandler);
-			this.timer.on("stop", this.stopHandler);
+			this[props].$okBtn.addEventListener("click", this.okClickHandler);
+			this[props].$resetBtn.addEventListener("click", this.resetClickHandler);
+			this.timer.on("start", this.countDownStartHandler);
+			this.timer.on("stop", this.countDownStopHandler);
 			return this;
 		}
 	},
@@ -159,10 +212,10 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	 */
 	_unbindEvents: {
 		value: function () {
-			this[$okBtn].removeEventListener("click", this.okClickHandler);
-			this[$resetBtn].removeEventListener("click", this.resetClickHandler);
-			this.timer.removeListener("start", this.startHandler);
-			this.timer.removeListener("stop", this.stopHandler);
+			this[props].$okBtn.removeEventListener("click", this.okClickHandler);
+			this[props].$resetBtn.removeEventListener("click", this.resetClickHandler);
+			this.timer.removeListener("start", this.countDownStartHandler);
+			this.timer.removeListener("stop", this.countDownStopHandler);
 			return this;
 		}
 	},
@@ -170,16 +223,16 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	/**
 	 * @private
 	 */
-	_onOkClick: {
+	onOkClick: {
 		value: function (oEvent) {
 			this.timer.stop();
-			this[$finalDateTime].value.replace(/([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?:\:([0-9]{2}))?/, function () {
+			this[props].$finalDateTime.value.replace(/([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?:\:([0-9]{2}))?/, function () {
 				var args = arguments,
 					now = new Date(args[1], parseInt(args[2]) - 1, args[3], args[4], args[5], args[6] || 0);
 				this.timer.final = now;
 			}.bind(this));
 			this.timer.start();
-			this[$settingsMenu].open = false;
+			this[props].$settingsMenu.open = false;
 			return this;
 		}
 	},
@@ -187,7 +240,7 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	/**
 	 * @private
 	 */
-	_onResetClick: {
+	onResetClick: {
 		value: function (oEvent) {
 			this.timer.stop();
 			this.reset();
@@ -198,15 +251,15 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	/**
 	 * @private
 	 */
-	_onCountDownStart: {
+	onCountDownStart: {
 		value: function (oSrc) {
-			this[$lblDisplay].innerHTML = this[$ongoingMsg].value;
-			this[$status].innerHTML = `Counting down to ${new Date(oSrc.final).toLocaleString()}.`;
+			this[props].$lblDisplay.innerHTML = this[props].$ongoingMsg.value;
+			this[props].$status.innerHTML = `Counting down to ${new Date(oSrc.final).toLocaleString()}.`;
 			storage.set({
 				final: this.timer.final.getTime(),
-				ongoingText: this[$ongoingMsg].value,
-				finalText: this[$finalMsg].value,
-				hideZeroTiles: !!this[oHideZeroTilesSwitch].state
+				ongoingText: this[props].$ongoingMsg.value,
+				finalText: this[props].$finalMsg.value,
+				hideZeroTiles: !!this[props].oHideZeroTilesSwitch.state
 			});
 			return this;
 		}
@@ -215,10 +268,10 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	/**
 	 * @private
 	 */
-	_onCountDownStop: {
+	onCountDownStop: {
 		value: function (oEvent) {
-			this[$lblDisplay].innerHTML = this[$finalMsg].value;
-			this[$status].innerHTML = "Done!";
+			this[props].$lblDisplay.innerHTML = this[props].$finalMsg.value;
+			this[props].$status.innerHTML = "Done!";
 			storage.reset();
 			return this;
 		}
@@ -232,9 +285,9 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 		value: function () {
 			this._unbindEvents();
 			this.okClickHandler = null;
-			this.resetClickHandler = null;
-			this.startHandler = null;
-			this.stopHandler = null;
+			this.onResetClickHandler = null;
+			this.countDownStartHandler = null;
+			this.countDownStopHandler = null;
 			this.view.destroy();
 			this.timer.destroy();
 			return this;

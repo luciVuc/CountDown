@@ -1,0 +1,11 @@
+{
+  "name": "polyfills",
+  "version": "0.0.1",
+  "description": "Polyfills",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": ["polyfill", "HTML", "details", "symbol"],
+  "author": "Lucian Vuc (https://github.com/luciVuc)",
+  "license": "ISC",
+  "dependencies": {}
+}

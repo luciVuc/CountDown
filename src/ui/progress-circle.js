@@ -1,3 +1,5 @@
+const EventEmitter = require("events");
+
 /**
  * @private Draws a "slice" of a pie chart with the given coordinates.
  * 
@@ -50,8 +52,9 @@ const valueColor = Symbol("valueColor");
  * @param {CSSFont} mSettings.valueStyle The info text font style, in CSS format
  * @param {CSSColor} mSettings.valueColor The info text color, in CSS format
  */
-function ProgressDonut(mSettings) {
+function ProgressCircle(mSettings) {
 	mSettings = mSettings instanceof Object ? mSettings : {};
+	EventEmitter.apply(this, arguments);
 	this.$canvas = mSettings.$canvas;
 	this[min] = Number.isInteger(mSettings.min) ? mSettings.min : 0;
 	this[max] = Number.isInteger(mSettings.max) ? mSettings.max : 100;
@@ -66,15 +69,15 @@ function ProgressDonut(mSettings) {
 	return this.draw();
 }
 
-ProgressDonut.radians = function (nDeg) {
+ProgressCircle.radians = function (nDeg) {
 	nDeg = Number(nDeg);
 	return !Number.isNaN(nDeg) ? nDeg * Math.PI/180 : 0;
 };
 
-ProgressDonut.prototype = Object.create(Object.prototype, {
+ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	constructor: {
 		enumerable: true,
-		value: ProgressDonut
+		value: ProgressCircle
 	},
 
 	/**
@@ -318,7 +321,7 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 
 			// draw the pie-chart slice
 			ctx.globalAlpha = 1;
-			drawPieSlice(ctx, cx, cy, r, angle, angle + 2 * Math.PI * this.value / this.max, this.lineFill);
+			drawPieSlice(ctx, cx, cy, r, angle, angle + 2 * Math.PI * (this.min + this.value) / (this.min + this.max), this.lineFill);
 
 			// draw the pie chart inner content
 			ctx.fillStyle = this.bgFill;
@@ -353,4 +356,4 @@ ProgressDonut.prototype = Object.create(Object.prototype, {
 	}
 });
 
-module.exports = ProgressDonut;
+module.exports = ProgressCircle;

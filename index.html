@@ -10,10 +10,22 @@
   <script src="index.js"></script>
 </head>
 
-<body>
+<body class="appContainer">
   <!--main view-->
   <div id="wrapper" class="wrapper">
-    <h2 id="lblDisplay" class="labelDisplay"></h2>
+    <div id="countDown" class="countDown">
+      <h2 id="lblDisplay" class="labelDisplay"></h2>
+    </div>
+    <div id="infoBar" class="infoBar">
+      <div class="copyrightNotice">
+        <div>
+          <div class="photoCredits">
+            <span id="photoBy" class="photoBy"></span> <a id="photoOwner" class="photoOwner" href="#" target="_blank"></a>
+          </div>
+          <span id="photoName" class="photoName"></span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!--status bar-->

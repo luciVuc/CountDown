@@ -1,0 +1,11 @@
+{
+  "name": "widgets",
+  "version": "0.0.1",
+  "description": "HTML5 Widgets",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": ["widgets", "HTML", "toggleSwitch"],
+  "author": "Lucian Vuc (https://github.com/luciVuc)",
+  "license": "ISC",
+  "dependencies": {}
+}

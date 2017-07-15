@@ -99,6 +99,12 @@ details summary::-webkit-details-marker {
 }
 
 .wrapper {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  height: calc(100% - 50px);
   text-align: center;
   padding: 10px;
 }
@@ -120,6 +126,32 @@ details summary::-webkit-details-marker {
 
 .tile h1 {
   font-size: 2.3rem;
+}
+
+.infoBar {
+  display: flex;
+  justify-content: space-between;
+}
+
+.clock {
+  line-height: 1;
+  user-select: none;
+  cursor: default;
+}
+
+.clock .time {
+  font-size: 75px;
+  font-weight: 200;
+  color: #fff;
+}
+
+.clock .timePeriod {
+  color: #fff;
+  display: inline-block;
+  font-size: 20px;
+  font-weight: 400;
+  margin-top: 6px;
+  vertical-align: top;
 }
 
 footer {

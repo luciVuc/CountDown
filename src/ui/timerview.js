@@ -1,11 +1,12 @@
-const Timer = require("./timer");
-const ProgressDonut = require("./progress-donut");
+const EventEmitter = require("events");
+const Timer = require("../components/timer");
+const ProgressDonut = require("./progress-circle");
 
 const $el = Symbol("$el");
-const $daysEl = Symbol("$daysEl");
-const $minsEl = Symbol("$minsEl");
-const $hrsEl = Symbol("$hrsEl");
-const $secsEl = Symbol("$secsEl");
+const $daysTile = Symbol("$daysTile");
+const $minsTile = Symbol("$minsTile");
+const $hoursTile = Symbol("$hoursTile");
+const $secsTile = Symbol("$secsTile");
 const timer = Symbol("timer");
 const supportsCanvas = Symbol("supportsCanvas");
 const hideZeroTiles = Symbol("hideZeroTiles");
@@ -19,11 +20,12 @@ const hideZeroTiles = Symbol("hideZeroTiles");
  */
 function TimerView(mSettings) {
 	mSettings = mSettings instanceof Object ? mSettings : {};
+	EventEmitter.apply(this, arguments);
 	this[$el] = null;
-	this[$daysEl] = null;
-	this[$minsEl] = null;
-	this[$hrsEl] = null;
-	this[$secsEl] = null;
+	this[$daysTile] = null;
+	this[$minsTile] = null;
+	this[$hoursTile] = null;
+	this[$secsTile] = null;
 	this.timer = mSettings.timer instanceof Timer ? mSettings.timer : new Timer();
 	this._updateHandler = this.update.bind(this);
 	this._startHandler = this.start.bind(this);
@@ -36,7 +38,7 @@ function TimerView(mSettings) {
 	return this;
 }
 
-TimerView.prototype = Object.create(Object.prototype, {
+TimerView.prototype = Object.create(EventEmitter.prototype, {
 	constructor: {
 		enumerable: true,
 		value: TimerView
@@ -55,40 +57,40 @@ TimerView.prototype = Object.create(Object.prototype, {
 	/**
 	 * @public	property
 	 */
-	$daysEl: {
+	$daysTile: {
 		enumerable: true,
 		get: function () {
-			return this[$daysEl];
+			return this[$daysTile];
 		}
 	},
 
 	/**
 	 * @public	property
 	 */
-	$minsEl: {
+	$minsTile: {
 		enumerable: true,
 		get: function () {
-			return this[$minsEl];
+			return this[$minsTile];
 		}
 	},
 
 	/**
 	 * @public	property
 	 */
-	$hrsEl: {
+	$hoursTile: {
 		enumerable: true,
 		get: function () {
-			return this[$hrsEl];
+			return this[$hoursTile];
 		}
 	},
 
 	/**
 	 * @public	property
 	 */
-	$secsEl: {
+	$secsTile: {
 		enumerable: true,
 		get: function () {
-			return this[$secsEl];
+			return this[$secsTile];
 		}
 	},
 
@@ -166,22 +168,22 @@ TimerView.prototype = Object.create(Object.prototype, {
 				this._oMinsDonut.value = this.timer.minutesLeft;
 				this._oSecsDonut.value = this.timer.secondsLeft;
 			} else {
-				this.$daysEl.innerHTML = this.timer.daysLeft;
-				this.$minsEl.innerHTML = this.timer.hoursLeft;
-				this.$hrsEl.innerHTML = this.timer.minutesLeft;
-				this.$secsEl.innerHTML = this.timer.secondsLeft;
+				this.$daysTile.innerHTML = this.timer.daysLeft;
+				this.$minsTile.innerHTML = this.timer.hoursLeft;
+				this.$hoursTile.innerHTML = this.timer.minutesLeft;
+				this.$secsTile.innerHTML = this.timer.secondsLeft;
 			}
 
-			this.$daysEl.parentElement.style.display = "";
-			this.$hrsEl.parentElement.style.display = "";
-			this.$minsEl.parentElement.style.display = "";
+			this.$daysTile.parentElement.style.display = "";
+			this.$hoursTile.parentElement.style.display = "";
+			this.$minsTile.parentElement.style.display = "";
 			if (this.hideZeroTiles) {
 				if (this.timer.daysLeft === 0) {
-					this.$daysEl.parentElement.style.display = "none";
+					this.$daysTile.parentElement.style.display = "none";
 					if (this.timer.hoursLeft === 0) {
-						this.$hrsEl.parentElement.style.display = "none";
+						this.$hoursTile.parentElement.style.display = "none";
 						if (this.timer.minutesLeft === 0) {
-							this.$minsEl.parentElement.style.display = "none";
+							this.$minsTile.parentElement.style.display = "none";
 						}
 					}
 				}
@@ -212,16 +214,16 @@ TimerView.prototype = Object.create(Object.prototype, {
 
 			this[$el] = el.querySelector(".timerDisplay");
 			el = el.removeChild(this.$el);
-			this[$daysEl] = el.querySelector(".days");
-			this[$hrsEl] = el.querySelector(".hours");
-			this[$minsEl] = el.querySelector(".mins");
-			this[$secsEl] = el.querySelector(".secs");
+			this[$daysTile] = el.querySelector(".days");
+			this[$hoursTile] = el.querySelector(".hours");
+			this[$minsTile] = el.querySelector(".mins");
+			this[$secsTile] = el.querySelector(".secs");
 
 			if (this.supportsCanvas) {
-				this._oDaysDonut = new ProgressDonut({ $canvas: this.$daysEl, max: this.timer.daysLeft, value: 0, bgFill: "white", lineFill: "red", backLineFill: "#dddddd", valueColor: "#777777" });
-				this._oHrsDonut = new ProgressDonut({ $canvas: this.$hrsEl, max: this.timer.hoursLeft, value: 0, bgFill: "white", lineFill: "green", backLineFill: "#dddddd", valueColor: "#777777" });
-				this._oMinsDonut = new ProgressDonut({ $canvas: this.$minsEl, max: this.timer.minutesLeft, value: 0, bgFill: "white", lineFill: "blue", backLineFill: "#dddddd", valueColor: "#777777" });
-				this._oSecsDonut = new ProgressDonut({ $canvas: this.$secsEl, max: this.timer.secondsLeft, value: 0, bgFill: "white", lineFill: "orange", backLineFill: "#dddddd", valueColor: "#777777" });
+				this._oDaysDonut = new ProgressDonut({ $canvas: this.$daysTile, max: this.timer.daysLeft, value: 0, bgFill: "white", lineFill: "red", backLineFill: "#dddddd", valueColor: "#777777" });
+				this._oHrsDonut = new ProgressDonut({ $canvas: this.$hoursTile, max: this.timer.hoursLeft, value: 0, bgFill: "white", lineFill: "green", backLineFill: "#dddddd", valueColor: "#777777" });
+				this._oMinsDonut = new ProgressDonut({ $canvas: this.$minsTile, max: this.timer.minutesLeft, value: 0, bgFill: "white", lineFill: "blue", backLineFill: "#dddddd", valueColor: "#777777" });
+				this._oSecsDonut = new ProgressDonut({ $canvas: this.$secsTile, max: this.timer.secondsLeft, value: 0, bgFill: "white", lineFill: "orange", backLineFill: "#dddddd", valueColor: "#777777" });
 			}
 			return this;
 		}
