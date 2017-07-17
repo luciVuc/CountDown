@@ -1,4 +1,9 @@
 const sKey = "countdown";
+const DEFAULTS = {
+	ongoingText: "Countdown is Over",
+	finalText: "Countdown Over",
+	hideZeroTiles: false
+};
 
 function fn() {
 	console.log(arguments);
@@ -12,6 +17,13 @@ DataStore.prototype = Object.create(Object.prototype, {
 	constructor: {
 		enumerable: true,
 		value: DataStore
+	},
+
+	DEFAULTS: {
+		enumerable: true,
+		get: function () {
+			return DEFAULTS;
+		}
 	},
 
 	/**
@@ -33,8 +45,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			json = json instanceof Object ? json : {};
 			var m = {
 				final: Number.isInteger(json.final) ? json.final : Date.now(),
-				ongoingText: typeof json.ongoingText === "string" ? json.ongoingText : "Remaining Time",
-				finalText: typeof json.finalText === "string" ? json.finalText : "Done",
+				ongoingText: typeof json.ongoingText === "string" ? json.ongoingText : DEFAULTS.ongoingText,
+				finalText: typeof json.finalText === "string" ? json.finalText : DEFAULTS.finalText,
 				hideZeroTiles: !!json.hideZeroTiles
 			};
 			return m;
@@ -55,8 +67,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			mJSON = mJSON instanceof Object ? mJSON : {};
 			var m = {
 				final: Number.isInteger(mJSON.final) ? mJSON.final : null,
-				ongoingText: typeof mJSON.ongoingText === "string" ? mJSON.ongoingText : "Remaining Time",
-				finalText: typeof mJSON.finalText === "string" ? mJSON.finalText : "Done",
+				ongoingText: typeof mJSON.ongoingText === "string" ? mJSON.ongoingText : DEFAULTS.ongoingText,
+				finalText: typeof mJSON.finalText === "string" ? mJSON.finalText : DEFAULTS.finalText,
 				hideZeroTiles: !!mJSON.hideZeroTiles
 			};
 			localStorage.setItem(sKey, JSON.stringify(m));
@@ -72,9 +84,9 @@ DataStore.prototype = Object.create(Object.prototype, {
 		value: function () {
 			var m = {
 				final: null,
-				ongoingText: "Remaining Time",
-				finalText: "Done",
-				hideZeroTiles: false
+				ongoingText: DEFAULTS.ongoingText,
+				finalText: DEFAULTS.finalText,
+				hideZeroTiles: DEFAULTS.hideZeroTiles
 			};
 			localStorage.setItem(sKey, JSON.stringify(m));
 			return this;

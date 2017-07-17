@@ -51,7 +51,8 @@ function clickHandler(e) {
 
 		if (details) {
 			// define the 'open' attribute as a property, if not defined 
-			if (details.hasOwnProperty("open") === false) {
+			// if (details.hasOwnProperty("open") === false) {
+			if (details instanceof HTMLUnknownElement && typeof details._open === "undefined") {
 				Object.defineProperty(details, "open", {
 					set: function (bVal) {
 						if (bVal === true) {
@@ -62,6 +63,9 @@ function clickHandler(e) {
 							this.removeAttribute("open");
 						}
 						return this;
+					},
+					get: function () {
+						return this._open;
 					}
 				});
 			}
@@ -83,8 +87,8 @@ window.addEventListener("load", function () {
 	if (!checkSupport()) {
 		// Add a classname
 		document.documentElement.className += ' no-details';
-		window.addEventListener('click', clickHandler);
-		injectStyle('details-polyfill-style', `html.no-details ${DETAILS}:not([open]) > :not(${SUMMARY}) { display: none; }	html.no-details  ${DETAILS} > ${SUMMARY}:before { content: "▶"; display: inline-block; font-size: .8em; width: 1.5em; } html.no-details  ${DETAILS}[open] > ${SUMMARY}:before { content: "▼"; }`);
+		document.addEventListener('click', clickHandler, false);
+		injectStyle('details-polyfill-style', `html.no-details ${DETAILS}:not([open]) > :not(${SUMMARY}) { display: none; }	html.no-details  ${DETAILS} > ${SUMMARY}:before { content: "▶"; display: inline-block; font-size: .8em; width: 1.5em; } html.no-details  ${DETAILS}[open] > ${SUMMARY}:before { content: "▼"; display: block;}`);
 	}
 });
 

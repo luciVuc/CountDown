@@ -50,6 +50,9 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$el: {
 		enumerable: true,
 		get: function () {
+			if (!(this[$el] instanceof HTMLElement)) {
+				this.render();
+			}
 			return this[$el];
 		}
 	},

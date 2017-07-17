@@ -1,27 +1,29 @@
 const polyfills = require("./polyfills");
-const CountDownApp = require("./countdown");
+const CountDown = require("./countdown");
 
 /**
  * @public Initialize and launch the countdown app controller
  * @author Lucian Vuc
  */
 window.onload = function () {
-	var app = new CountDownApp({	
+	var app = new CountDown({	
 		$wrapper: document.querySelector('#wrapper'),
+		$backgroundImage: document.querySelector("#wrapper"),
 		$countDown: document.querySelector('#countDown'),
-		$lblDisplay: document.querySelector("#lblDisplay"),
-		$settingsMenu: document.querySelector("#settingsMenu"),
-		$finalDateTime: document.querySelector("#finalDateTime"),
-		$ongoingMsg: document.querySelector("#ongoingMsg"),
-		$finalMsg: document.querySelector("#finalMsg"),
+		$countDownEventDisplay: document.querySelector("#countDownEventDisplay"),
+		$countDownDateTimeDisplay: document.querySelector("#countDownDateTimeDisplay"),
+		$mainMenu: document.querySelector("#mainMenu"),
+		$countDownDateTime: document.querySelector("#countDownDateTime"),
+		$countDownText: document.querySelector("#countDownText"),
+		$endCountDownText: document.querySelector("#endCountDownText"),
 		$hideZeroTiles: document.querySelector("#hideZeroTiles"),		
 		$okBtn: document.querySelector("#okBtn"),
 		$resetBtn: document.querySelector("#resetBtn"),
+		$title: document.querySelector('#title'),
 		$infoBar: document.querySelector('#infoBar'),
 		$photoBy: document.querySelector('#photoBy'),
 		$photoOwner: document.querySelector('#photoOwner'),
-		$photoName: document.querySelector('#photoName'),
-		$status: document.querySelector("#status")
+		$photoName: document.querySelector('#photoName')
 	});
 
 	if (window.location.hash === "settings") {

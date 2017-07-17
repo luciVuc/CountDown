@@ -1,31 +1,50 @@
 const EventEmitter = require("events");
-const ClockState = require("./clockState");
 
 const props = Symbol("props");
 
-function Clock (mSettings) {
+const tickInterval = Symbol("tickInterval");
+const onupdate = Symbol("onupdate");
+const onstart = Symbol("onstart");
+const onstop = Symbol("onstop");
+const onready = Symbol("onready");
+
+
+function Clock(mSettings) {
   mSettings = typeof mSettings === "object" ? mSettings : {};
   this[props] = {};
   EventEmitter.apply(this, arguments);
-  this.dateTimeFormat = mSettings.dateTimeFormat instanceof Intl.DateTimeFormat ? mSettings.dateTimeFormat : new Intl.DateTimeFormat([], {hour: '2-digit', minute: '2-digit'});
-  this.state = Clock.getClockState(new Date(), this.dateTimeFormat);
+  this[props].onupdate = typeof mSettings.onupdate === "function" ? mSettings.onupdate : null;
+  this[props].onstart = typeof mSettings.onstart === "function" ? mSettings.onstart : null;
+	this[props].tickInterval = null;
+  this.date = mSettings.date instanceof Date ? mSettings.date : new Date();
+  this.dateTimeFormat = mSettings.dateTimeFormat instanceof Intl.DateTimeFormat ? mSettings.dateTimeFormat : new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit' });
   return this;
 }
 
-Clock.getClockState = function (oDate, oDateTimeFormat) {
-  if (oDate instanceof Date && oDateTimeFormat instanceof Intl.DateTimeFormat) {
-    return new ClockState({
-      date: oDate,
-      dateTimeFormat: oDateTimeFormat
-    });
+Clock.getMinutes = function (oDate) {
+  if (oDate instanceof Date) {
+    return Math.floor(oDate.valueOf() / 1000 / 60);
   }
-  return null;
+  throw new Error("Invalid argument: Argument must be a Date");
 };
 
 Clock.prototype = Object.create(EventEmitter.prototype, {
   constructor: {
     enumerable: true,
     value: Clock
+  },
+
+  date: {
+    enumerable: true,
+    set: function (oDate) {
+      if (oDate instanceof Date) {
+        this[props].date = oDate;
+      }
+      return this;
+    },
+    get: function () {
+      return this[props].date;
+    }
   },
 
   dateTimeFormat: {
@@ -41,23 +60,48 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     }
   },
 
-  state: {
+  currentTime: {
     enumerable: true,
-    set: function (oArg) {
-      if (oArg instanceof ClockState) {
-        this[props].state = oArg;
-      }
-      return this;
-    },
     get: function () {
-      return this[props].state;
+      return this.dateTimeFormat.format(this.date);
     }
   },
+  
+	/**
+	 * @public	property
+	 */
+	onupdate: {
+		enumerable: true,
+		set: function (fn) {
+			if (typeof fn === "function" || fn === null) {
+				this[props].onupdate = fn;
+			}
+			return this;
+		},
+		get: function () {
+			return this[props].onupdate;
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	onstart: {
+		enumerable: true,
+		set: function (fn) {
+			if (typeof fn === "function" || fn === null) {
+				this[props].onstart = fn;
+			}
+		},
+		get: function () {
+			return this[props].onstart;
+		}
+	},
 
   formattedTime: {
     enumerable: true,
     get: function () {
-      const time = this.state.currentTime;
+      const time = this.currentTime;
       return time.replace(' AM', '').replace(' PM', '');
     }
   },
@@ -65,7 +109,7 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
   formattedTimePeriod: {
     enumerable: true,
     get: function () {
-      const time = this.state.currentTime;
+      const time = this.currentTime;
       if (time.toUpperCase().indexOf(' AM') > -1) {
         return 'AM';
       }
@@ -76,33 +120,52 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     }
   },
 
-  getMinutes: {
-    enumerable: true,
-    value: function (oDate) {
-      if (oDate instanceof Date) {
-        return Math.floor(oDate.valueOf() / 1000 / 60);
-      }
-      throw new Error("Invalid argument: Argument must be a Date");
-    }
-  },
-
-  maybeUpdateClock: {
+  update: {
     enumerable: true,
     value: function () {
       const now = new Date();
-      if (this.getMinutes(this.state.date) !== this.getMinutes(now)) {
-        this.state = Clock.getClockState(now, this.dateTimeFormat);
+      if (Clock.getMinutes(this.date) !== Clock.getMinutes(now)) {
+        this.date = now;
+        this.emit("update", this);
+				if (typeof this.onupdate === "function") {
+					this.onupdate(this);
+				}
       }
+      return this;
     }
   },
 
   start: {
     enumerable: true,
     value: function () {
-      window.setInterval(this.maybeUpdateClock.bind(this), 2000);
+      this[props].tickInterval = window.setInterval(this.update.bind(this), 2000);
+			this.emit("start", this);
+			if (typeof this.onstart === "function") {
+				this.onstart(this);
+        this.emit("start", this);
+        if (typeof this.onstart === "function") {
+          this.onstart(this);
+        }
+			}
+			return this;
     }
-  }
+	},
 
+	/**
+	 * @public	
+	 */
+	destroy: {
+		enumerable: true,
+		value: function () {
+			this[props].date = null;
+			this[props].dateTimeFormat = null;
+			this.removeAllListeners("start");
+			this.removeAllListeners("update");
+      clearInterval(this[props].tickInterval);
+      this[props].tickInterval = null;
+			return this;
+		}
+  }
 });
 
 module.exports = Clock;

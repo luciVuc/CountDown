@@ -1,4 +1,23 @@
+@font-face {
+  font-family: 'Freedom';
+  src:  url('/assets/fonts/freedom/FREEDOM.otf') format('opentype'),
+    url('/assets/fonts/freedom/FREEDOM.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Quango';
+  src:  url('/assets/fonts/quango/Quango.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 /* CSS file placeholder. */
+* {
+  box-sizing: border-box;
+}
+
 html, body {
   position: relative;
   margin: 0;
@@ -10,6 +29,8 @@ html, body {
   min-height: 280px;
   overflow: hidden;
   background-color: #F2EFE8;
+  font-family: "Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing: antialiased;
 }
 
 body {
@@ -19,16 +40,40 @@ body {
   font-size: 75%;
 }
 
+.wrapper {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-start;
+  /* height: calc(100% - 50px); */
+  height: 100%;
+  text-align: center;
+  padding: 10px;
+}
+
+.backgroundImage {
+  /* position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%; */
+  background-position-x: center;
+  background-position-y: center;
+}
+
 details {
   position: absolute;
   background-color: transparent;
-  color: #003f72;
+  /* color: #003f72; */
+  color: white;
   padding: 5px;
   border-radius: 0.4rem;
   width: 20px;
   top: 10px;
   left: 10px;
 }
+
 details[open] {
   margin-right: 10px;
   width: auto;
@@ -38,11 +83,33 @@ details[open] {
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   border-radius: 5px 5px 5px 5px;
-  box-shadow: 2px 2px 6px #b6b6b6;
+  box-shadow: 0px 0px 1px 1px #b6b6b6;
+}
+
+details summary {
+  list-style-type: none;
 }
 
 details summary::-webkit-details-marker {
   display:none;
+}
+
+html.no-details details > summary,
+summary {
+  outline: none;
+  font-size: larger;
+  font-weight: 900 !important;
+  text-align: left;
+}
+
+html.no-details details > summary:before {
+  content: "\e94c" !important;
+  display: inline-block;
+}
+
+html.no-details details[open] > summary:before {
+  content: "\e94c" !important;
+  display: block;
 }
 
 .settingsForm hr {
@@ -57,6 +124,7 @@ details summary::-webkit-details-marker {
   margin: auto;
   margin-bottom: 5px;
 }
+
 .settingsForm table {
   width: auto;
   height: auto;
@@ -72,11 +140,12 @@ details summary::-webkit-details-marker {
 }
 
 .settingsForm table td {
+  text-align: left;
 }
 
 .settingsForm table td input[type="datetime-local"],
 .settingsForm table td input[type="text"] {
-  width: 220px;
+  min-width: 250px;
   height: 22px;
   background-color: #002d51;
   border: 0;
@@ -92,21 +161,42 @@ details summary::-webkit-details-marker {
 }
 .settingsForm table td input[type="text"] {
 }
+.settingsForm table td button,
 .settingsForm table td input[type="submit"],
 .settingsForm table td input[type="reset"],
 .settingsForm table td input[type="button"] {
-  width: 50%;
+  min-width: 125px;
+  display: inline-block;
 }
 
-.wrapper {
-  position: relative;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: space-between;
-  height: calc(100% - 50px);
-  text-align: center;
-  padding: 10px;
+/* extras  */
+.okBtn:before {
+  content: "✔";
+}
+
+.resetBtn:before {
+  content: "⮿";
+}
+
+.hourglass:before {
+  content: "⏲";
+}
+.hourglass-on:before {
+  content: "⏲";
+}
+
+.title {
+  font-size: 1.5rem;
+  color: white;
+  text-shadow: 0px 0px 4px #555555;
+}
+
+.title::before {
+  font-size: 50%;
+}
+
+.title span {
+  font-family: Freedom;
 }
 
 .tile {
@@ -121,7 +211,7 @@ details summary::-webkit-details-marker {
   backface-visibility: hidden;
   border-radius: 5px 5px 5px 5px;
   background-color: #fff;
-  box-shadow: 2px 2px 6px #b6b6b6;
+  box-shadow: 0px 0px 1px 2px #b6b6b6;
 }
 
 .tile h1 {
@@ -143,6 +233,7 @@ details summary::-webkit-details-marker {
   font-size: 75px;
   font-weight: 200;
   color: #fff;
+  display: inline-block;
 }
 
 .clock .timePeriod {
@@ -150,22 +241,86 @@ details summary::-webkit-details-marker {
   display: inline-block;
   font-size: 20px;
   font-weight: 400;
-  margin-top: 6px;
+  /* margin-top: 6px; */
   vertical-align: top;
+  vertical-align: top;
+  line-height: 40px;
 }
 
-footer {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 30px;
-  width: 100%;
-  background-color: #003f72;
+.infoBar .copyrightNotice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1.3;
+  user-select: none;
+  cursor: default;
+}
+
+.infoBar .copyrightNotice div,
+.infoBar .copyrightNotice .photoCredits {
+  text-align: left;
+}
+
+.infoBar .copyrightNotice .photoCredits,
+.infoBar .copyrightNotice .photoCredits .photoBy,
+.infoBar .copyrightNotice .photoCredits .photoOwner {
+  color: #fff;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.infoBar .copyrightNotice .photoCredits .photoOwner {
+  text-decoration: underline;
+}
+
+.infoBar .copyrightNotice .photoName {
+  color: rgba(255,255,255,0.5);
+  font-size: 23px;
+}
+
+.countDownUntil,
+.countDownEventDisplay,
+.countDownDateTimeDisplay {
+  display: block;
+  font-size: 1rem;
+  font-family: Quango;  
+}
+
+.countDownUntil {
+  margin-top: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: grey 1px 0px 5px;
+  font-size: 1.2rem;
+}
+
+.countDownEventDisplay {
+  color: white;
+  text-shadow: grey 1px 0px 5px;
+  font-size: 2rem;
+}
+
+.countDownDateTimeDisplay {
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: grey 1px 0px 5px;
+  font-size: 0.9rem;  
+}
+
+.footer {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  height: auto; 
+  /* width: 100%; */
+  /* background-color: #003f72; */
   color: #b2cfe4;
   font-size: 10px;
+  /* padding: 10px; */
+  box-sizing: border-box;
 }
 
-footer span {
+.footer span {
   display: inline-block;
   padding: 3px 6px;
 }

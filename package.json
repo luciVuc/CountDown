@@ -4,8 +4,8 @@
   "description": "Browser-based app which displays a Countdown timer to a selected date and time.",
   "main": "index.html",
   "window": {
-    "width": 550,
-    "height": 300
+    "width": 600,
+    "height": 400
   },
   "scripts": {
     "start": "nw .",

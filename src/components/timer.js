@@ -254,6 +254,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 			this.removeAllListeners("stop");
 			this.removeAllListeners("update");
 			this.removeAllListeners("ready");
+			this.stop();
 			return this;
 		}
 	}

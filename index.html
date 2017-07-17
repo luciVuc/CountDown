@@ -11,63 +11,77 @@
 </head>
 
 <body class="appContainer">
-  <!--main view-->
-  <div id="wrapper" class="wrapper">
-    <div id="countDown" class="countDown">
-      <h2 id="lblDisplay" class="labelDisplay"></h2>
-    </div>
-    <div id="infoBar" class="infoBar">
-      <div class="copyrightNotice">
-        <div>
-          <div class="photoCredits">
-            <span id="photoBy" class="photoBy"></span> <a id="photoOwner" class="photoOwner" href="#" target="_blank"></a>
+  <div id="wrapper" class="wrapper backgroundImage">
+    <header id="header" class="header">
+      <nav>
+        <!--menu-->
+        <details id="mainMenu" class="mainMenu">
+          <summary class="mbri-menu"></summary>
+          <div id="settingsForm" class="settingsForm">
+            <table>
+              <caption>
+                <span>Enter CountDown Parameters</span>
+                <hr/>
+              </caption>
+              <tr>
+                <th><label for="countDownDateTime">Countdown Date and Time: </label></th>
+                <td>
+                  <input type="datetime-local" id="countDownDateTime" name="countDownDateTime" title="Countdown Date and Time">
+                </td>
+              </tr>
+              <tr>
+                <th><label for="countDownText">Countdown text: </label></th>
+                <td><input type="text" id="countDownText" name="countDownText" placeholder="Counting down message" title="Countdown Text"></td>
+              </tr>
+              <tr>
+                <th><label for="endCountDownText">End countdown text: </label></th>
+                <td><input type="text" id="endCountDownText" name="endCountDownText" placeholder="Final Message" title="End Countdown text"></td>
+              </tr>
+              <tr>
+                <th></th>
+                <td><div id="hideZeroTiles"></div></td>
+              </tr>
+              <tr>
+                <th></th>
+                <td>
+                  <hr/>
+                  <button type="submit" id="okBtn" title="Save and start" class="mbri-play"></button>
+                  <button type="reset" id="resetBtn" title="Reset" class="mbri-refresh"></button>
+                </td>
+              </tr>
+            </table>
           </div>
-          <span id="photoName" class="photoName"></span>
+        </details>
+        
+        <h2 id="title" class="title mbri-clock"><span>Countdown</span></h2>
+      </nav>
+    </header>
+
+    <!--main view-->
+    <div class="main">
+      <div id="countDown" class="countDown"></div>
+      <span class="countDownUntil">until</span>
+      <span id="countDownEventDisplay" class="countDownEventDisplay"></span>
+      <span id="countDownDateTimeDisplay" class="countDownDateTimeDisplay"></span>
+    </div>
+
+    <!--status bar-->
+    <footer class="footer">
+      <div id="infoBar" class="infoBar">
+        <div class="copyrightNotice">
+          <div>
+            <div class="photoCredits">
+              <span id="photoBy" class="photoBy">Photo:</span> <a id="photoOwner" class="photoOwner" href="#" target="_blank"></a>
+            </div>
+            <span id="photoName" class="photoName"></span>
+          </div>
         </div>
       </div>
-    </div>
+      <!-- <span class="copyright">&copy; 2017 LV</span> -->
+    </footer>
   </div>
 
-  <!--status bar-->
-  <footer>
-    <span id="status" class="status"></span>
-    <span class="copyright">&copy; 2017 LV</span>
-  </footer>
 
-  <!--menu-->
-  <details id="settingsMenu" class="settingsMenu">
-    <summary class="mbri-menu"></summary>
-    <div id="settingsForm" class="settingsForm">
-      <table>
-        <caption><span>Enter CountDown Parameters</span>
-          <hr/>
-        </caption>
-        <tr>
-          <th><label for="finalDateTime">Final DateTime: </label></th>
-          <td>
-            <input type="datetime-local" id="finalDateTime" name="finalDateTime">
-          </td>
-        </tr>
-        <tr>
-          <th><label for="ongoingMsg">Counting down message: </label></th>
-          <td><input type="text" id="ongoingMsg" name="ongoingMsg" placeholder="Counting down message"></td>
-        </tr>
-        <tr>
-          <th><label for="finalMsg">Final message: </label></th>
-          <td><input type="text" id="finalMsg" name="finalMsg" placeholder="Final Message"></td>
-        </tr>
-        <tr>
-          <th></th>
-          <td><div id="hideZeroTiles"></div></td>
-        </tr>
-        <tr>
-          <th></th>
-          <td>
-            <hr/><input type="submit" id="okBtn" value="OK"><input type="reset" id="resetBtn" value="Reset"></td>
-        </tr>
-      </table>
-    </div>
-  </details>
 </body>
 
 </html>

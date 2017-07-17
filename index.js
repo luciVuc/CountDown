@@ -1,4 +1,308 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.CountDown = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+function EventEmitter() {
+  this._events = this._events || {};
+  this._maxListeners = this._maxListeners || undefined;
+}
+module.exports = EventEmitter;
+
+// Backwards-compat with node 0.10.x
+EventEmitter.EventEmitter = EventEmitter;
+
+EventEmitter.prototype._events = undefined;
+EventEmitter.prototype._maxListeners = undefined;
+
+// By default EventEmitters will print a warning if more than 10 listeners are
+// added to it. This is a useful default which helps finding memory leaks.
+EventEmitter.defaultMaxListeners = 10;
+
+// Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+EventEmitter.prototype.setMaxListeners = function(n) {
+  if (!isNumber(n) || n < 0 || isNaN(n))
+    throw TypeError('n must be a positive number');
+  this._maxListeners = n;
+  return this;
+};
+
+EventEmitter.prototype.emit = function(type) {
+  var er, handler, len, args, i, listeners;
+
+  if (!this._events)
+    this._events = {};
+
+  // If there is no 'error' event listener then throw.
+  if (type === 'error') {
+    if (!this._events.error ||
+        (isObject(this._events.error) && !this._events.error.length)) {
+      er = arguments[1];
+      if (er instanceof Error) {
+        throw er; // Unhandled 'error' event
+      } else {
+        // At least give some kind of context to the user
+        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
+        err.context = er;
+        throw err;
+      }
+    }
+  }
+
+  handler = this._events[type];
+
+  if (isUndefined(handler))
+    return false;
+
+  if (isFunction(handler)) {
+    switch (arguments.length) {
+      // fast cases
+      case 1:
+        handler.call(this);
+        break;
+      case 2:
+        handler.call(this, arguments[1]);
+        break;
+      case 3:
+        handler.call(this, arguments[1], arguments[2]);
+        break;
+      // slower
+      default:
+        args = Array.prototype.slice.call(arguments, 1);
+        handler.apply(this, args);
+    }
+  } else if (isObject(handler)) {
+    args = Array.prototype.slice.call(arguments, 1);
+    listeners = handler.slice();
+    len = listeners.length;
+    for (i = 0; i < len; i++)
+      listeners[i].apply(this, args);
+  }
+
+  return true;
+};
+
+EventEmitter.prototype.addListener = function(type, listener) {
+  var m;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events)
+    this._events = {};
+
+  // To avoid recursion in the case that type === "newListener"! Before
+  // adding it to the listeners, first emit "newListener".
+  if (this._events.newListener)
+    this.emit('newListener', type,
+              isFunction(listener.listener) ?
+              listener.listener : listener);
+
+  if (!this._events[type])
+    // Optimize the case of one listener. Don't need the extra array object.
+    this._events[type] = listener;
+  else if (isObject(this._events[type]))
+    // If we've already got an array, just append.
+    this._events[type].push(listener);
+  else
+    // Adding the second element, need to change to array.
+    this._events[type] = [this._events[type], listener];
+
+  // Check for listener leak
+  if (isObject(this._events[type]) && !this._events[type].warned) {
+    if (!isUndefined(this._maxListeners)) {
+      m = this._maxListeners;
+    } else {
+      m = EventEmitter.defaultMaxListeners;
+    }
+
+    if (m && m > 0 && this._events[type].length > m) {
+      this._events[type].warned = true;
+      console.error('(node) warning: possible EventEmitter memory ' +
+                    'leak detected. %d listeners added. ' +
+                    'Use emitter.setMaxListeners() to increase limit.',
+                    this._events[type].length);
+      if (typeof console.trace === 'function') {
+        // not supported in IE 10
+        console.trace();
+      }
+    }
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.once = function(type, listener) {
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  var fired = false;
+
+  function g() {
+    this.removeListener(type, g);
+
+    if (!fired) {
+      fired = true;
+      listener.apply(this, arguments);
+    }
+  }
+
+  g.listener = listener;
+  this.on(type, g);
+
+  return this;
+};
+
+// emits a 'removeListener' event iff the listener was removed
+EventEmitter.prototype.removeListener = function(type, listener) {
+  var list, position, length, i;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events || !this._events[type])
+    return this;
+
+  list = this._events[type];
+  length = list.length;
+  position = -1;
+
+  if (list === listener ||
+      (isFunction(list.listener) && list.listener === listener)) {
+    delete this._events[type];
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+
+  } else if (isObject(list)) {
+    for (i = length; i-- > 0;) {
+      if (list[i] === listener ||
+          (list[i].listener && list[i].listener === listener)) {
+        position = i;
+        break;
+      }
+    }
+
+    if (position < 0)
+      return this;
+
+    if (list.length === 1) {
+      list.length = 0;
+      delete this._events[type];
+    } else {
+      list.splice(position, 1);
+    }
+
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.removeAllListeners = function(type) {
+  var key, listeners;
+
+  if (!this._events)
+    return this;
+
+  // not listening for removeListener, no need to emit
+  if (!this._events.removeListener) {
+    if (arguments.length === 0)
+      this._events = {};
+    else if (this._events[type])
+      delete this._events[type];
+    return this;
+  }
+
+  // emit removeListener for all listeners on all events
+  if (arguments.length === 0) {
+    for (key in this._events) {
+      if (key === 'removeListener') continue;
+      this.removeAllListeners(key);
+    }
+    this.removeAllListeners('removeListener');
+    this._events = {};
+    return this;
+  }
+
+  listeners = this._events[type];
+
+  if (isFunction(listeners)) {
+    this.removeListener(type, listeners);
+  } else if (listeners) {
+    // LIFO order
+    while (listeners.length)
+      this.removeListener(type, listeners[listeners.length - 1]);
+  }
+  delete this._events[type];
+
+  return this;
+};
+
+EventEmitter.prototype.listeners = function(type) {
+  var ret;
+  if (!this._events || !this._events[type])
+    ret = [];
+  else if (isFunction(this._events[type]))
+    ret = [this._events[type]];
+  else
+    ret = this._events[type].slice();
+  return ret;
+};
+
+EventEmitter.prototype.listenerCount = function(type) {
+  if (this._events) {
+    var evlistener = this._events[type];
+
+    if (isFunction(evlistener))
+      return 1;
+    else if (evlistener)
+      return evlistener.length;
+  }
+  return 0;
+};
+
+EventEmitter.listenerCount = function(emitter, type) {
+  return emitter.listenerCount(type);
+};
+
+function isFunction(arg) {
+  return typeof arg === 'function';
+}
+
+function isNumber(arg) {
+  return typeof arg === 'number';
+}
+
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
+
+function isUndefined(arg) {
+  return arg === void 0;
+}
+
+},{}],2:[function(require,module,exports){
 module.exports = [
   {
     "name": "Tuolome Meadows",
@@ -102,129 +406,41 @@ module.exports = [
     "link": "https://www.photoserge.com/"
   }
 ];
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 const EventEmitter = require("events");
-const ClockState = require("./clockState");
 
 const props = Symbol("props");
 
-function Clock (mSettings) {
+const tickInterval = Symbol("tickInterval");
+const onupdate = Symbol("onupdate");
+const onstart = Symbol("onstart");
+const onstop = Symbol("onstop");
+const onready = Symbol("onready");
+
+
+function Clock(mSettings) {
   mSettings = typeof mSettings === "object" ? mSettings : {};
   this[props] = {};
   EventEmitter.apply(this, arguments);
-  this.dateTimeFormat = mSettings.dateTimeFormat instanceof Intl.DateTimeFormat ? mSettings.dateTimeFormat : new Intl.DateTimeFormat([], {hour: '2-digit', minute: '2-digit'});
-  this.state = Clock.getClockState(new Date(), this.dateTimeFormat);
+  this[props].onupdate = typeof mSettings.onupdate === "function" ? mSettings.onupdate : null;
+  this[props].onstart = typeof mSettings.onstart === "function" ? mSettings.onstart : null;
+	this[props].tickInterval = null;
+  this.date = mSettings.date instanceof Date ? mSettings.date : new Date();
+  this.dateTimeFormat = mSettings.dateTimeFormat instanceof Intl.DateTimeFormat ? mSettings.dateTimeFormat : new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit' });
   return this;
 }
 
-Clock.getClockState = function (oDate, oDateTimeFormat) {
-  if (oDate instanceof Date && oDateTimeFormat instanceof Intl.DateTimeFormat) {
-    return new ClockState({
-      date: oDate,
-      dateTimeFormat: oDateTimeFormat
-    });
+Clock.getMinutes = function (oDate) {
+  if (oDate instanceof Date) {
+    return Math.floor(oDate.valueOf() / 1000 / 60);
   }
-  return null;
+  throw new Error("Invalid argument: Argument must be a Date");
 };
 
 Clock.prototype = Object.create(EventEmitter.prototype, {
   constructor: {
     enumerable: true,
     value: Clock
-  },
-
-  dateTimeFormat: {
-    enumerable: true,
-    set: function (oArg) {
-      if (oArg instanceof Intl.DateTimeFormat) {
-        this[props].dateTimeFormat = oArg;
-      }
-      return this;
-    },
-    get: function () {
-      return this[props].dateTimeFormat;
-    }
-  },
-
-  state: {
-    enumerable: true,
-    set: function (oArg) {
-      if (oArg instanceof ClockState) {
-        this[props].state = oArg;
-      }
-      return this;
-    },
-    get: function () {
-      return this[props].state;
-    }
-  },
-
-  formattedTime: {
-    enumerable: true,
-    get: function () {
-      const time = this.state.currentTime;
-      return time.replace(' AM', '').replace(' PM', '');
-    }
-  },
-
-  formattedTimePeriod: {
-    enumerable: true,
-    get: function () {
-      const time = this.state.currentTime;
-      if (time.toUpperCase().indexOf(' AM') > -1) {
-        return 'AM';
-      }
-      if (time.toUpperCase().indexOf(' PM') > -1) {
-        return 'PM';
-      }
-      return '';
-    }
-  },
-
-  getMinutes: {
-    enumerable: true,
-    value: function (oDate) {
-      if (oDate instanceof Date) {
-        return Math.floor(oDate.valueOf() / 1000 / 60);
-      }
-      throw new Error("Invalid argument: Argument must be a Date");
-    }
-  },
-
-  maybeUpdateClock: {
-    enumerable: true,
-    value: function () {
-      const now = new Date();
-      if (this.getMinutes(this.state.date) !== this.getMinutes(now)) {
-        this.state = Clock.getClockState(now, this.dateTimeFormat);
-      }
-    }
-  },
-
-  start: {
-    enumerable: true,
-    value: function () {
-      window.setInterval(this.maybeUpdateClock.bind(this), 2000);
-    }
-  }
-
-});
-
-module.exports = Clock;
-},{"./clockState":3,"events":17}],3:[function(require,module,exports){
-const props = Symbol("props");
-
-function ClockState (mSettings) {
-  mSettings = typeof mSettings === "object" ? mSettings : {};
-  this[props] = {};
-  this.date = mSettings.date instanceof Date ? mSettings.date : new Date();
-  this.dateTimeFormat = mSettings.dateTimeFormat instanceof Intl.DateTimeFormat ? mSettings.dateTimeFormat : new Intl.DateTimeFormat([], {hour: '2-digit', minute: '2-digit'});
-  return this;
-}
-ClockState.prototype = Object.create(Object.prototype, {
-  constructor: {
-    enumerable: true,
-    value: ClockState
   },
 
   date: {
@@ -258,12 +474,117 @@ ClockState.prototype = Object.create(Object.prototype, {
     get: function () {
       return this.dateTimeFormat.format(this.date);
     }
+  },
+  
+	/**
+	 * @public	property
+	 */
+	onupdate: {
+		enumerable: true,
+		set: function (fn) {
+			if (typeof fn === "function" || fn === null) {
+				this[props].onupdate = fn;
+			}
+			return this;
+		},
+		get: function () {
+			return this[props].onupdate;
+		}
+	},
+
+	/**
+	 * @public	property
+	 */
+	onstart: {
+		enumerable: true,
+		set: function (fn) {
+			if (typeof fn === "function" || fn === null) {
+				this[props].onstart = fn;
+			}
+		},
+		get: function () {
+			return this[props].onstart;
+		}
+	},
+
+  formattedTime: {
+    enumerable: true,
+    get: function () {
+      const time = this.currentTime;
+      return time.replace(' AM', '').replace(' PM', '');
+    }
+  },
+
+  formattedTimePeriod: {
+    enumerable: true,
+    get: function () {
+      const time = this.currentTime;
+      if (time.toUpperCase().indexOf(' AM') > -1) {
+        return 'AM';
+      }
+      if (time.toUpperCase().indexOf(' PM') > -1) {
+        return 'PM';
+      }
+      return '';
+    }
+  },
+
+  update: {
+    enumerable: true,
+    value: function () {
+      const now = new Date();
+      if (Clock.getMinutes(this.date) !== Clock.getMinutes(now)) {
+        this.date = now;
+        this.emit("update", this);
+				if (typeof this.onupdate === "function") {
+					this.onupdate(this);
+				}
+      }
+      return this;
+    }
+  },
+
+  start: {
+    enumerable: true,
+    value: function () {
+      this[props].tickInterval = window.setInterval(this.update.bind(this), 2000);
+			this.emit("start", this);
+			if (typeof this.onstart === "function") {
+				this.onstart(this);
+        this.emit("start", this);
+        if (typeof this.onstart === "function") {
+          this.onstart(this);
+        }
+			}
+			return this;
+    }
+	},
+
+	/**
+	 * @public	
+	 */
+	destroy: {
+		enumerable: true,
+		value: function () {
+			this[props].date = null;
+			this[props].dateTimeFormat = null;
+			this.removeAllListeners("start");
+			this.removeAllListeners("update");
+      clearInterval(this[props].tickInterval);
+      this[props].tickInterval = null;
+			return this;
+		}
   }
 });
 
-module.exports = ClockState;
-},{}],4:[function(require,module,exports){
+module.exports = Clock;
+},{"events":1}],4:[function(require,module,exports){
 const sKey = "countdown";
+const DEFAULTS = {
+	ongoingText: "Countdown is Over",
+	finalText: "Countdown Over",
+	hideZeroTiles: false
+};
 
 function fn() {
 	console.log(arguments);
@@ -277,6 +598,13 @@ DataStore.prototype = Object.create(Object.prototype, {
 	constructor: {
 		enumerable: true,
 		value: DataStore
+	},
+
+	DEFAULTS: {
+		enumerable: true,
+		get: function () {
+			return DEFAULTS;
+		}
 	},
 
 	/**
@@ -298,8 +626,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			json = json instanceof Object ? json : {};
 			var m = {
 				final: Number.isInteger(json.final) ? json.final : Date.now(),
-				ongoingText: typeof json.ongoingText === "string" ? json.ongoingText : "Remaining Time",
-				finalText: typeof json.finalText === "string" ? json.finalText : "Done",
+				ongoingText: typeof json.ongoingText === "string" ? json.ongoingText : DEFAULTS.ongoingText,
+				finalText: typeof json.finalText === "string" ? json.finalText : DEFAULTS.finalText,
 				hideZeroTiles: !!json.hideZeroTiles
 			};
 			return m;
@@ -320,8 +648,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			mJSON = mJSON instanceof Object ? mJSON : {};
 			var m = {
 				final: Number.isInteger(mJSON.final) ? mJSON.final : null,
-				ongoingText: typeof mJSON.ongoingText === "string" ? mJSON.ongoingText : "Remaining Time",
-				finalText: typeof mJSON.finalText === "string" ? mJSON.finalText : "Done",
+				ongoingText: typeof mJSON.ongoingText === "string" ? mJSON.ongoingText : DEFAULTS.ongoingText,
+				finalText: typeof mJSON.finalText === "string" ? mJSON.finalText : DEFAULTS.finalText,
 				hideZeroTiles: !!mJSON.hideZeroTiles
 			};
 			localStorage.setItem(sKey, JSON.stringify(m));
@@ -337,9 +665,9 @@ DataStore.prototype = Object.create(Object.prototype, {
 		value: function () {
 			var m = {
 				final: null,
-				ongoingText: "Remaining Time",
-				finalText: "Done",
-				hideZeroTiles: false
+				ongoingText: DEFAULTS.ongoingText,
+				finalText: DEFAULTS.finalText,
+				hideZeroTiles: DEFAULTS.hideZeroTiles
 			};
 			localStorage.setItem(sKey, JSON.stringify(m));
 			return this;
@@ -616,6 +944,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 			this.removeAllListeners("stop");
 			this.removeAllListeners("update");
 			this.removeAllListeners("ready");
+			this.stop();
 			return this;
 		}
 	}
@@ -623,7 +952,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 
 module.exports = Timer;
 
-},{"events":17}],6:[function(require,module,exports){
+},{"events":1}],6:[function(require,module,exports){
 const Timer = require("./components/timer");
 const TimerView = require("./ui/timerview");
 const ClockView = require("./ui/clockview");
@@ -634,20 +963,22 @@ const backgrounds = require("../data/backgrounds");
 const props = Symbol("props");
 const aElements = [
 	"$wrapper",
+	"$backgroundImage",
 	"$countDown",
-	"$lblDisplay",
-	"$settingsMenu",
-	"$finalDateTime",
-	"$ongoingMsg",
-	"$finalMsg",
+	"$countDownEventDisplay",
+	"$countDownDateTimeDisplay",
+	"$mainMenu",
+	"$countDownDateTime",
+	"$countDownText",
+	"$endCountDownText",
 	"$hideZeroTiles",
+	"$title",
 	"$okBtn",
 	"$resetBtn",
 	"$infoBar",
 	"$photoBy",
 	"$photoOwner",
-	"$photoName",
-	"$status"
+	"$photoName"
 ];
 
 /**
@@ -655,9 +986,9 @@ const aElements = [
  * @param {object} mSettings map of initial settings
  * @param {object} mSettings.view map of initial settings for the view
  * @param {object} mSettings.view.timer map of initial settings for the model
- * @returns {CountDownApp} self reference
+ * @returns {CountDown} self reference
  */
-function CountDownApp(mSettings) {
+function CountDown(mSettings) {
 	mSettings = mSettings instanceof Object ? mSettings : {};
 
 	// define own event handlers
@@ -673,7 +1004,7 @@ function CountDownApp(mSettings) {
 	return this.init(mSettings);
 }
 
-CountDownApp.getRandomaBackgroundImage = function () {
+CountDown.getRandomaBackgroundImage = function () {
 	var iRnd = Math.floor(Math.random() * (backgrounds.length - 0) + 0);
 	return backgrounds.filter(function (o, i, arr) {
 		return i === iRnd;
@@ -681,10 +1012,10 @@ CountDownApp.getRandomaBackgroundImage = function () {
 };
 
 
-CountDownApp.prototype = Object.create(Object.prototype, {
+CountDown.prototype = Object.create(Object.prototype, {
 	constructor: {
 		enumerable: true,
-		value: CountDownApp
+		value: CountDown
 	},
 
 	/**
@@ -713,9 +1044,8 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 			});
 
 			this.backgroundImage = null;
-			this[props].$wrapper.style.backgroundImage = `url(${this.backgroundImage.source})`;
-			this[props].$countDown.appendChild(this.view.render().$el);
-			this[props].$infoBar.appendChild(this.clockView.render().$el);
+			this[props].$countDown.appendChild(this.view.$el);
+			this[props].$infoBar.appendChild(this.clockView.$el);
 			this._bindEvents();
 			this._loadData();
 			this.timer.start();
@@ -733,11 +1063,11 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 			if (data !== null) {
 				var date = Number.isInteger(data.final) ? new Date(data.final) : new Date();
 				this.timer.final = date;
-				this[props].$finalDateTime.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().replace(/\.[0-9]{3}Z/, "");
-				this[props].$ongoingMsg.value = data.ongoingText;
-				this[props].$finalMsg.value = data.finalText;
-				this[props].$lblDisplay.innerHTML = this[props].$finalMsg.value;
-				this[props].$status.innerHTML = "";
+				this[props].$countDownDateTime.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().replace(/\.[0-9]{3}Z/, "");
+				this[props].$countDownText.value = data.ongoingText;
+				this[props].$endCountDownText.value = data.finalText;
+				this[props].$countDownEventDisplay.innerHTML = this[props].$endCountDownText.value;
+				this[props].$countDownDateTimeDisplay.innerHTML = "";
 				this[props].oHideZeroTilesSwitch.state = data.hideZeroTiles ? 1 : 0;
 			}
 			return this;
@@ -747,7 +1077,7 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	openSettingsMenu: {
 		enumerable: true,
 		value: function () {
-			this[props].$settingsMenu.open = true;
+			this[props].$mainMenu.open = true;
 			return this;
 		}
 	},
@@ -755,7 +1085,7 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	closeSettingsMenu: {
 		enumerable: true,
 		value: function () {
-			this[props].$settingsMenu.open = false;
+			this[props].$mainMenu.open = false;
 			return this;
 		}
 	},
@@ -812,7 +1142,12 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	backgroundImage: {
 		enumerable: true,
 		set: function () {
-			this[props].backgroundImage = CountDownApp.getRandomaBackgroundImage();
+			this[props].backgroundImage = CountDown.getRandomaBackgroundImage();
+			this[props].$backgroundImage.style.backgroundImage = `url(${this.backgroundImage.source})`;
+			// this[props].$photoBy.innerHTML = this.backgroundImage.source;
+			this[props].$photoOwner.innerHTML = this.backgroundImage.author;
+			this[props].$photoOwner.href = this.backgroundImage.link;
+			this[props].$photoName.innerHTML = this.backgroundImage.name;
 			return this;
 		},
 		get: function () {
@@ -853,13 +1188,13 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	onOkClick: {
 		value: function (oEvent) {
 			this.timer.stop();
-			this[props].$finalDateTime.value.replace(/([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?:\:([0-9]{2}))?/, function () {
+			this[props].$countDownDateTime.value.replace(/([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?:\:([0-9]{2}))?/, function () {
 				var args = arguments,
 					now = new Date(args[1], parseInt(args[2]) - 1, args[3], args[4], args[5], args[6] || 0);
 				this.timer.final = now;
 			}.bind(this));
 			this.timer.start();
-			this[props].$settingsMenu.open = false;
+			this[props].$mainMenu.open = false;
 			return this;
 		}
 	},
@@ -880,12 +1215,14 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	 */
 	onCountDownStart: {
 		value: function (oSrc) {
-			this[props].$lblDisplay.innerHTML = this[props].$ongoingMsg.value;
-			this[props].$status.innerHTML = `Counting down to ${new Date(oSrc.final).toLocaleString()}.`;
+			// this[props].$title.classList.remove("hourglass");
+			// this[props].$title.classList.add("hourglass-on");
+			this[props].$countDownEventDisplay.innerHTML = this[props].$countDownText.value;
+			this[props].$countDownDateTimeDisplay.innerHTML = `(${new Date(oSrc.final).toLocaleString()})`;
 			storage.set({
 				final: this.timer.final.getTime(),
-				ongoingText: this[props].$ongoingMsg.value,
-				finalText: this[props].$finalMsg.value,
+				ongoingText: this[props].$countDownText.value,
+				finalText: this[props].$endCountDownText.value,
 				hideZeroTiles: !!this[props].oHideZeroTilesSwitch.state
 			});
 			return this;
@@ -897,8 +1234,10 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 	 */
 	onCountDownStop: {
 		value: function (oEvent) {
-			this[props].$lblDisplay.innerHTML = this[props].$finalMsg.value;
-			this[props].$status.innerHTML = "Done!";
+			// this[props].$title.classList.remove("hourglass-on");
+			// this[props].$title.classList.add("hourglass");
+			this[props].$countDownEventDisplay.innerHTML = this[props].$endCountDownText.value;
+			this[props].$countDownDateTimeDisplay.innerHTML = storage.DEFAULTS.finalText; // "Coundown Over";
 			storage.reset();
 			return this;
 		}
@@ -917,38 +1256,42 @@ CountDownApp.prototype = Object.create(Object.prototype, {
 			this.countDownStopHandler = null;
 			this.view.destroy();
 			this.timer.destroy();
+			this.clockView.clock.destroy();
+			this.clockView.destroy()
 			return this;
 		}
 	}
 });
 
-module.exports = CountDownApp;
+module.exports = CountDown;
 
-},{"../data/backgrounds":1,"./components/storage":4,"./components/timer":5,"./ui/clockview":11,"./ui/timerview":13,"./ui/widgets":14}],7:[function(require,module,exports){
+},{"../data/backgrounds":2,"./components/storage":4,"./components/timer":5,"./ui/clockview":11,"./ui/timerview":13,"./ui/widgets":14}],7:[function(require,module,exports){
 const polyfills = require("./polyfills");
-const CountDownApp = require("./countdown");
+const CountDown = require("./countdown");
 
 /**
  * @public Initialize and launch the countdown app controller
  * @author Lucian Vuc
  */
 window.onload = function () {
-	var app = new CountDownApp({	
+	var app = new CountDown({	
 		$wrapper: document.querySelector('#wrapper'),
+		$backgroundImage: document.querySelector("#wrapper"),
 		$countDown: document.querySelector('#countDown'),
-		$lblDisplay: document.querySelector("#lblDisplay"),
-		$settingsMenu: document.querySelector("#settingsMenu"),
-		$finalDateTime: document.querySelector("#finalDateTime"),
-		$ongoingMsg: document.querySelector("#ongoingMsg"),
-		$finalMsg: document.querySelector("#finalMsg"),
+		$countDownEventDisplay: document.querySelector("#countDownEventDisplay"),
+		$countDownDateTimeDisplay: document.querySelector("#countDownDateTimeDisplay"),
+		$mainMenu: document.querySelector("#mainMenu"),
+		$countDownDateTime: document.querySelector("#countDownDateTime"),
+		$countDownText: document.querySelector("#countDownText"),
+		$endCountDownText: document.querySelector("#endCountDownText"),
 		$hideZeroTiles: document.querySelector("#hideZeroTiles"),		
 		$okBtn: document.querySelector("#okBtn"),
 		$resetBtn: document.querySelector("#resetBtn"),
+		$title: document.querySelector('#title'),
 		$infoBar: document.querySelector('#infoBar'),
 		$photoBy: document.querySelector('#photoBy'),
 		$photoOwner: document.querySelector('#photoOwner'),
-		$photoName: document.querySelector('#photoName'),
-		$status: document.querySelector("#status")
+		$photoName: document.querySelector('#photoName')
 	});
 
 	if (window.location.hash === "settings") {
@@ -1019,7 +1362,8 @@ function clickHandler(e) {
 
 		if (details) {
 			// define the 'open' attribute as a property, if not defined 
-			if (details.hasOwnProperty("open") === false) {
+			// if (details.hasOwnProperty("open") === false) {
+			if (details instanceof HTMLUnknownElement && typeof details._open === "undefined") {
 				Object.defineProperty(details, "open", {
 					set: function (bVal) {
 						if (bVal === true) {
@@ -1030,6 +1374,9 @@ function clickHandler(e) {
 							this.removeAttribute("open");
 						}
 						return this;
+					},
+					get: function () {
+						return this._open;
 					}
 				});
 			}
@@ -1051,8 +1398,8 @@ window.addEventListener("load", function () {
 	if (!checkSupport()) {
 		// Add a classname
 		document.documentElement.className += ' no-details';
-		window.addEventListener('click', clickHandler);
-		injectStyle('details-polyfill-style', `html.no-details ${DETAILS}:not([open]) > :not(${SUMMARY}) { display: none; }	html.no-details  ${DETAILS} > ${SUMMARY}:before { content: "▶"; display: inline-block; font-size: .8em; width: 1.5em; } html.no-details  ${DETAILS}[open] > ${SUMMARY}:before { content: "▼"; }`);
+		document.addEventListener('click', clickHandler, false);
+		injectStyle('details-polyfill-style', `html.no-details ${DETAILS}:not([open]) > :not(${SUMMARY}) { display: none; }	html.no-details  ${DETAILS} > ${SUMMARY}:before { content: "▶"; display: inline-block; font-size: .8em; width: 1.5em; } html.no-details  ${DETAILS}[open] > ${SUMMARY}:before { content: "▼"; display: block;}`);
 	}
 });
 
@@ -1128,7 +1475,11 @@ function ClockView (mSettings) {
   mSettings = typeof mSettings === "object" ? mSettings : {};
   this[props] = {};
   this[props].$el = null;
+	this.onUpdate = this.update.bind(this);
+	this.onStart = this.start.bind(this);
   this.clock = mSettings.clock instanceof Clock ? mSettings.clock : new Clock();
+	this.clock.on("start", this.onStart);
+	this.clock.on("update", this.onUpdate);
   return this;
 }
 
@@ -1158,7 +1509,38 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
 	$el: {
 		enumerable: true,
 		get: function () {
+			if (!(this[props].$el instanceof HTMLElement)) {
+				this.render();
+			}
 			return this[props].$el;
+		}
+	},
+
+	/**
+	 * @public	Starts the clock
+	 */
+	start: {
+		enumerable: true,
+		value: function () {
+			if (!(this.$el instanceof HTMLElement)) {
+				this.render();
+			}
+			return this.update();
+		}
+	},
+
+	/**
+	 * @public	Updates the state of its Clock instance
+	 */
+	update: {
+		enumerable: true,
+		value: function () {
+			if (!(this.$el instanceof HTMLElement)) {
+				this.render();
+			}
+      this[props].$time.innerHTML = this.clock.formattedTime;
+      this[props].$timePeriod.innerHTML = this.clock.formattedTimePeriod;
+			return this;
 		}
 	},
 
@@ -1171,14 +1553,33 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
         <span class="time">${this.clock.formattedTime}</span><span class="timePeriod">${this.clock.formattedTimePeriod}</span>
       </div>`;
 			this[props].$el = el.querySelector(".clock");
-			el.removeChild(this.$el);
+			el = el.removeChild(this.$el);
+			this[props].$time = el.querySelector(".time");
+			this[props].$timePeriod = el.querySelector(".timePeriod");
 			return this;
     }
+	},
+
+	/**
+	 * @public	De-allocates the resources used by this instance
+	 */
+	destroy: {
+		enumerable: true,
+		value: function () {
+			this.clock.removeAllListeners("start");
+      this.clock.removeAllListeners("update");
+      this[props].clock = null;
+      this[props] = null;
+      this.onUpdate = null;
+      this.onStart = null;
+			return this;
+		}
   }
 });
 
 module.exports = ClockView;
-},{"../components/clock":2,"events":17}],12:[function(require,module,exports){
+
+},{"../components/clock":3,"events":1}],12:[function(require,module,exports){
 const EventEmitter = require("events");
 
 /**
@@ -1538,7 +1939,7 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 });
 
 module.exports = ProgressCircle;
-},{"events":17}],13:[function(require,module,exports){
+},{"events":1}],13:[function(require,module,exports){
 const EventEmitter = require("events");
 const Timer = require("../components/timer");
 const ProgressDonut = require("./progress-circle");
@@ -1591,6 +1992,9 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$el: {
 		enumerable: true,
 		get: function () {
+			if (!(this[$el] instanceof HTMLElement)) {
+				this.render();
+			}
 			return this[$el];
 		}
 	},
@@ -1796,7 +2200,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 
 module.exports = TimerView;
 
-},{"../components/timer":5,"./progress-circle":12,"events":17}],14:[function(require,module,exports){
+},{"../components/timer":5,"./progress-circle":12,"events":1}],14:[function(require,module,exports){
 
 module.exports = {
   Widget: require("./widget"),
@@ -2093,309 +2497,5 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 });
 
 module.exports = Widget;
-},{"events":17}],17:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-function EventEmitter() {
-  this._events = this._events || {};
-  this._maxListeners = this._maxListeners || undefined;
-}
-module.exports = EventEmitter;
-
-// Backwards-compat with node 0.10.x
-EventEmitter.EventEmitter = EventEmitter;
-
-EventEmitter.prototype._events = undefined;
-EventEmitter.prototype._maxListeners = undefined;
-
-// By default EventEmitters will print a warning if more than 10 listeners are
-// added to it. This is a useful default which helps finding memory leaks.
-EventEmitter.defaultMaxListeners = 10;
-
-// Obviously not all Emitters should be limited to 10. This function allows
-// that to be increased. Set to zero for unlimited.
-EventEmitter.prototype.setMaxListeners = function(n) {
-  if (!isNumber(n) || n < 0 || isNaN(n))
-    throw TypeError('n must be a positive number');
-  this._maxListeners = n;
-  return this;
-};
-
-EventEmitter.prototype.emit = function(type) {
-  var er, handler, len, args, i, listeners;
-
-  if (!this._events)
-    this._events = {};
-
-  // If there is no 'error' event listener then throw.
-  if (type === 'error') {
-    if (!this._events.error ||
-        (isObject(this._events.error) && !this._events.error.length)) {
-      er = arguments[1];
-      if (er instanceof Error) {
-        throw er; // Unhandled 'error' event
-      } else {
-        // At least give some kind of context to the user
-        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
-        err.context = er;
-        throw err;
-      }
-    }
-  }
-
-  handler = this._events[type];
-
-  if (isUndefined(handler))
-    return false;
-
-  if (isFunction(handler)) {
-    switch (arguments.length) {
-      // fast cases
-      case 1:
-        handler.call(this);
-        break;
-      case 2:
-        handler.call(this, arguments[1]);
-        break;
-      case 3:
-        handler.call(this, arguments[1], arguments[2]);
-        break;
-      // slower
-      default:
-        args = Array.prototype.slice.call(arguments, 1);
-        handler.apply(this, args);
-    }
-  } else if (isObject(handler)) {
-    args = Array.prototype.slice.call(arguments, 1);
-    listeners = handler.slice();
-    len = listeners.length;
-    for (i = 0; i < len; i++)
-      listeners[i].apply(this, args);
-  }
-
-  return true;
-};
-
-EventEmitter.prototype.addListener = function(type, listener) {
-  var m;
-
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  if (!this._events)
-    this._events = {};
-
-  // To avoid recursion in the case that type === "newListener"! Before
-  // adding it to the listeners, first emit "newListener".
-  if (this._events.newListener)
-    this.emit('newListener', type,
-              isFunction(listener.listener) ?
-              listener.listener : listener);
-
-  if (!this._events[type])
-    // Optimize the case of one listener. Don't need the extra array object.
-    this._events[type] = listener;
-  else if (isObject(this._events[type]))
-    // If we've already got an array, just append.
-    this._events[type].push(listener);
-  else
-    // Adding the second element, need to change to array.
-    this._events[type] = [this._events[type], listener];
-
-  // Check for listener leak
-  if (isObject(this._events[type]) && !this._events[type].warned) {
-    if (!isUndefined(this._maxListeners)) {
-      m = this._maxListeners;
-    } else {
-      m = EventEmitter.defaultMaxListeners;
-    }
-
-    if (m && m > 0 && this._events[type].length > m) {
-      this._events[type].warned = true;
-      console.error('(node) warning: possible EventEmitter memory ' +
-                    'leak detected. %d listeners added. ' +
-                    'Use emitter.setMaxListeners() to increase limit.',
-                    this._events[type].length);
-      if (typeof console.trace === 'function') {
-        // not supported in IE 10
-        console.trace();
-      }
-    }
-  }
-
-  return this;
-};
-
-EventEmitter.prototype.on = EventEmitter.prototype.addListener;
-
-EventEmitter.prototype.once = function(type, listener) {
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  var fired = false;
-
-  function g() {
-    this.removeListener(type, g);
-
-    if (!fired) {
-      fired = true;
-      listener.apply(this, arguments);
-    }
-  }
-
-  g.listener = listener;
-  this.on(type, g);
-
-  return this;
-};
-
-// emits a 'removeListener' event iff the listener was removed
-EventEmitter.prototype.removeListener = function(type, listener) {
-  var list, position, length, i;
-
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  if (!this._events || !this._events[type])
-    return this;
-
-  list = this._events[type];
-  length = list.length;
-  position = -1;
-
-  if (list === listener ||
-      (isFunction(list.listener) && list.listener === listener)) {
-    delete this._events[type];
-    if (this._events.removeListener)
-      this.emit('removeListener', type, listener);
-
-  } else if (isObject(list)) {
-    for (i = length; i-- > 0;) {
-      if (list[i] === listener ||
-          (list[i].listener && list[i].listener === listener)) {
-        position = i;
-        break;
-      }
-    }
-
-    if (position < 0)
-      return this;
-
-    if (list.length === 1) {
-      list.length = 0;
-      delete this._events[type];
-    } else {
-      list.splice(position, 1);
-    }
-
-    if (this._events.removeListener)
-      this.emit('removeListener', type, listener);
-  }
-
-  return this;
-};
-
-EventEmitter.prototype.removeAllListeners = function(type) {
-  var key, listeners;
-
-  if (!this._events)
-    return this;
-
-  // not listening for removeListener, no need to emit
-  if (!this._events.removeListener) {
-    if (arguments.length === 0)
-      this._events = {};
-    else if (this._events[type])
-      delete this._events[type];
-    return this;
-  }
-
-  // emit removeListener for all listeners on all events
-  if (arguments.length === 0) {
-    for (key in this._events) {
-      if (key === 'removeListener') continue;
-      this.removeAllListeners(key);
-    }
-    this.removeAllListeners('removeListener');
-    this._events = {};
-    return this;
-  }
-
-  listeners = this._events[type];
-
-  if (isFunction(listeners)) {
-    this.removeListener(type, listeners);
-  } else if (listeners) {
-    // LIFO order
-    while (listeners.length)
-      this.removeListener(type, listeners[listeners.length - 1]);
-  }
-  delete this._events[type];
-
-  return this;
-};
-
-EventEmitter.prototype.listeners = function(type) {
-  var ret;
-  if (!this._events || !this._events[type])
-    ret = [];
-  else if (isFunction(this._events[type]))
-    ret = [this._events[type]];
-  else
-    ret = this._events[type].slice();
-  return ret;
-};
-
-EventEmitter.prototype.listenerCount = function(type) {
-  if (this._events) {
-    var evlistener = this._events[type];
-
-    if (isFunction(evlistener))
-      return 1;
-    else if (evlistener)
-      return evlistener.length;
-  }
-  return 0;
-};
-
-EventEmitter.listenerCount = function(emitter, type) {
-  return emitter.listenerCount(type);
-};
-
-function isFunction(arg) {
-  return typeof arg === 'function';
-}
-
-function isNumber(arg) {
-  return typeof arg === 'number';
-}
-
-function isObject(arg) {
-  return typeof arg === 'object' && arg !== null;
-}
-
-function isUndefined(arg) {
-  return arg === void 0;
-}
-
-},{}]},{},[7])(7)
+},{"events":1}]},{},[7])(7)
 });
