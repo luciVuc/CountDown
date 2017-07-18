@@ -2,13 +2,16 @@ const EventEmitter = require("events");
 
 const props = Symbol("props");
 
-const tickInterval = Symbol("tickInterval");
-const onupdate = Symbol("onupdate");
-const onstart = Symbol("onstart");
-const onstop = Symbol("onstop");
-const onready = Symbol("onready");
-
-
+/**
+ * @public Clock
+ * 
+ * @param {object} mSettings 
+ * @param {Date} mSettings.date
+ * @param {Intl.DateTimeFormat} mSettings.DateTimeFormat
+ * @param {function} mSettings.onstart 
+ * @param {function} mSettings.onupdate
+ * @returns {Clock} self reference
+ */
 function Clock(mSettings) {
   mSettings = typeof mSettings === "object" ? mSettings : {};
   this[props] = {};
@@ -21,6 +24,11 @@ function Clock(mSettings) {
   return this;
 }
 
+/**
+ * @public Returns the number of minutes of a date
+ * @param {Date} oDate
+ * @returns {integer} Minutes
+ */
 Clock.getMinutes = function (oDate) {
   if (oDate instanceof Date) {
     return Math.floor(oDate.valueOf() / 1000 / 60);
@@ -34,6 +42,9 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     value: Clock
   },
 
+	/**
+	 * @public	property
+	 */
   date: {
     enumerable: true,
     set: function (oDate) {
@@ -47,6 +58,9 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     }
   },
 
+	/**
+	 * @public	property
+	 */
   dateTimeFormat: {
     enumerable: true,
     set: function (oArg) {
@@ -120,6 +134,9 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     }
   },
 
+  /**
+   * @public
+   */
   update: {
     enumerable: true,
     value: function () {
@@ -135,6 +152,9 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     }
   },
 
+  /**
+   * @public
+   */
   start: {
     enumerable: true,
     value: function () {
