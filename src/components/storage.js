@@ -1,7 +1,7 @@
 const sKey = "countdown";
 const DEFAULTS = {
-	ongoingText: "Countdown is Over",
-	finalText: "Countdown Over",
+	countdownText: "Countdown is Over",
+	endCountdownText: "Countdown Over",
 	hideZeroTiles: false
 };
 
@@ -32,8 +32,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 	 * @returns {object}	The countdown data as a literal object with the following properties
 	 * <ul>
 	 * 	<li>final, {integer}</li>
-	 * 	<li>ongoingText, {string}</li>
-	 * 	<li>finalText, {string}</li>
+	 * 	<li>countdownText, {string}</li>
+	 * 	<li>endCountdownText, {string}</li>
 	 * </ul>
 	 */
 	get: {
@@ -45,8 +45,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			json = json instanceof Object ? json : {};
 			var m = {
 				final: Number.isInteger(json.final) ? json.final : Date.now(),
-				ongoingText: typeof json.ongoingText === "string" ? json.ongoingText : DEFAULTS.ongoingText,
-				finalText: typeof json.finalText === "string" ? json.finalText : DEFAULTS.finalText,
+				countdownText: typeof json.countdownText === "string" ? json.countdownText : DEFAULTS.countdownText,
+				endCountdownText: typeof json.endCountdownText === "string" ? json.endCountdownText : DEFAULTS.endCountdownText,
 				hideZeroTiles: !!json.hideZeroTiles
 			};
 			return m;
@@ -58,8 +58,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 	 * 
 	 * @param mJSON	{object}	countdown data to be stored
 	 * @param mJSON.final	{integer}	countdown final date and time, in milliseconds
-	 * @param mJSON.ongoingText	{string}	Text to display while counting down
-	 * @param mJSON.finalText	{string}	Text to display when countdown is over
+	 * @param mJSON.countdownText	{string}	Text to display while counting down
+	 * @param mJSON.endCountdownText	{string}	Text to display when countdown is over
 	 */
 	set: {
 		enumerable: true,
@@ -67,8 +67,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			mJSON = mJSON instanceof Object ? mJSON : {};
 			var m = {
 				final: Number.isInteger(mJSON.final) ? mJSON.final : null,
-				ongoingText: typeof mJSON.ongoingText === "string" ? mJSON.ongoingText : DEFAULTS.ongoingText,
-				finalText: typeof mJSON.finalText === "string" ? mJSON.finalText : DEFAULTS.finalText,
+				countdownText: typeof mJSON.countdownText === "string" ? mJSON.countdownText : DEFAULTS.countdownText,
+				endCountdownText: typeof mJSON.endCountdownText === "string" ? mJSON.endCountdownText : DEFAULTS.endCountdownText,
 				hideZeroTiles: !!mJSON.hideZeroTiles
 			};
 			localStorage.setItem(sKey, JSON.stringify(m));
@@ -84,8 +84,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 		value: function () {
 			var m = {
 				final: null,
-				ongoingText: DEFAULTS.ongoingText,
-				finalText: DEFAULTS.finalText,
+				countdownText: DEFAULTS.countdownText,
+				endCountdownText: DEFAULTS.endCountdownText,
 				hideZeroTiles: DEFAULTS.hideZeroTiles
 			};
 			localStorage.setItem(sKey, JSON.stringify(m));

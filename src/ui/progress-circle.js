@@ -23,18 +23,7 @@ function drawPieSlice(oContext, centerX, centerY, radius, startAngle, endAngle, 
 	return oContext;
 }
 
-const $canvas = Symbol("$canvas");
-const ctx = Symbol("ctx");
-const min = Symbol("min");
-const max = Symbol("max");
-const value = Symbol("value");
-const lineWidth = Symbol("lineWidth");
-const lineFill = Symbol("lineFill");
-const backLineFill = Symbol("backLineFill");
-const bgFill = Symbol("bgFill");
-const showValue = Symbol("showValue");
-const valueStyle = Symbol("valueStyle");
-const valueColor = Symbol("valueColor");
+const _ = Symbol("_");
 
 /**
  * @public	Displays a round, doughnut-like progress bar, using HTML canvas.
@@ -55,17 +44,18 @@ const valueColor = Symbol("valueColor");
 function ProgressCircle(mSettings) {
 	mSettings = mSettings instanceof Object ? mSettings : {};
 	EventEmitter.apply(this, arguments);
+	this[_] = {};
 	this.$canvas = mSettings.$canvas;
-	this[min] = Number.isInteger(mSettings.min) ? mSettings.min : 0;
-	this[max] = Number.isInteger(mSettings.max) ? mSettings.max : 100;
-	this[value] = Number.isInteger(mSettings.value) ? mSettings.value : 0;
-	this[lineWidth] = Number.isInteger(mSettings.lineWidth) ? mSettings.lineWidth : 3;
-	this[lineFill] = typeof mSettings.lineFill === "string" ? mSettings.lineFill : "#CCB566";
-	this[backLineFill] = typeof mSettings.backLineFill === "string" ? mSettings.backLineFill : "#FB6929";
-	this[bgFill] = typeof mSettings.bgFill === "string" ? mSettings.bgFill : "#F8FF8E";
-	this[showValue] = typeof mSettings.showValue === "boolean" ? mSettings.showValue : true;
-	this[valueStyle] = typeof mSettings.valueStyle === "string" ? mSettings.valueStyle : "bold " + this.radius * 0.8 + "px sans-serif";
-	this[valueColor] = typeof mSettings.valueColor === "string" ? mSettings.valueColor : "red";
+	this[_].min = Number.isInteger(mSettings.min) ? mSettings.min : 0;
+	this[_].max = Number.isInteger(mSettings.max) ? mSettings.max : 100;
+	this[_].value = Number.isInteger(mSettings.value) ? mSettings.value : 0;
+	this[_].lineWidth = Number.isInteger(mSettings.lineWidth) ? mSettings.lineWidth : 3;
+	this[_].lineFill = typeof mSettings.lineFill === "string" ? mSettings.lineFill : "#CCB566";
+	this[_].backLineFill = typeof mSettings.backLineFill === "string" ? mSettings.backLineFill : "#FB6929";
+	this[_].bgFill = typeof mSettings.bgFill === "string" ? mSettings.bgFill : "#F8FF8E";
+	this[_].showValue = typeof mSettings.showValue === "boolean" ? mSettings.showValue : true;
+	this[_].valueStyle = typeof mSettings.valueStyle === "string" ? mSettings.valueStyle : "bold " + this.radius * 0.8 + "px sans-serif";
+	this[_].valueColor = typeof mSettings.valueColor === "string" ? mSettings.valueColor : "red";
 	return this.draw();
 }
 
@@ -89,12 +79,12 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 			if (!($Canvas instanceof HTMLCanvasElement)) {
 				throw new Error("No Canvas support");
 			}
-			this[$canvas] = $Canvas;
-			this[ctx] = $Canvas.getContext("2d");
+			this[_].$canvas = $Canvas;
+			this[_].ctx = $Canvas.getContext("2d");
 			return this.draw();
 		},
 		get: function () {
-			return this[ctx];
+			return this[_].ctx;
 		}
 	},
 
@@ -104,7 +94,7 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	context2d: {
 		enumerable: true,
 		get: function () {
-			return this[ctx];
+			return this[_].ctx;
 		}
 	},
 
@@ -114,7 +104,7 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	x: {
 		enumerable: true,
 		get: function () {
-			return this[ctx].canvas.width / 2;
+			return this[_].ctx.canvas.width / 2;
 		}
 	},
 
@@ -124,7 +114,7 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	y: {
 		enumerable: true,
 		get: function () {
-			return this[ctx].canvas.height / 2;
+			return this[_].ctx.canvas.height / 2;
 		}
 	},
 
@@ -145,12 +135,12 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (iMin) {
 			if (Number.isInteger(iMin)) {
-				this[min] = iMin;
+				this[_].min = iMin;
 			}
 			return this.draw();
 		},
 		get: function () {
-			return this[min];
+			return this[_].min;
 		}
 	},
 
@@ -161,12 +151,12 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (iMax) {
 			if (Number.isInteger(iMax)) {
-				this[max] = iMax;
+				this[_].max = iMax;
 			}
 			return this.draw();
 		},
 		get: function () {
-			return this[max];
+			return this[_].max;
 		}
 	},
 
@@ -177,12 +167,12 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (iValue) {
 			if (Number.isInteger(iValue) && iValue >= this.min && iValue <= this.max) {
-				this[value] = iValue;
+				this[_].value = iValue;
 			}
 			return this.draw();
 		},
 		get: function () {
-			return this[value];
+			return this[_].value;
 		}
 	},
 
@@ -192,11 +182,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	lineWidth: {
 		enumerable: true,
 		set: function (iLineWidth) {
-			this[lineWidth] = Number.isInteger(iLineWidth) ? Math.abs(iLineWidth) : this[lineWidth];
+			this[_].lineWidth = Number.isInteger(iLineWidth) ? Math.abs(iLineWidth) : this[_].lineWidth;
 			return this.draw();
 		},
 		get: function () {
-			return this[lineWidth];
+			return this[_].lineWidth;
 		}
 	},
 
@@ -206,11 +196,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	lineFill: {
 		enumerable: true,
 		set: function (sLineFill) {
-			this[lineFill] = typeof sLineFill === "string" ? sLineFill : this[lineFill];
+			this[_].lineFill = typeof sLineFill === "string" ? sLineFill : this[_].lineFill;
 			return this.draw();
 		},
 		get: function () {
-			return this[lineFill];
+			return this[_].lineFill;
 		}
 	},
 
@@ -220,11 +210,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	backLineFill: {
 		enumerable: true,
 		set: function (sBackLineFill) {
-			this[backLineFill] = typeof sBackLineFill === "string" ? sBackLineFill : this[backLineFill];
+			this[_].backLineFill = typeof sBackLineFill === "string" ? sBackLineFill : this[_].backLineFill;
 			return this.draw();
 		},
 		get: function () {
-			return this[backLineFill];
+			return this[_].backLineFill;
 		}
 	},
 
@@ -234,11 +224,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	bgFill: {
 		enumerable: true,
 		set: function (sBgFill) {
-			this[bgFill] = typeof sBgFill === "string" ? sBgFill : this[bgFill];
+			this[_].bgFill = typeof sBgFill === "string" ? sBgFill : this[_].bgFill;
 			return this.draw();
 		},
 		get: function () {
-			return this[bgFill];
+			return this[_].bgFill;
 		}
 	},
 
@@ -248,11 +238,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	showValue: {
 		enumerable: true,
 		set: function (bShowInfoText) {
-			this[showValue] = typeof bShowInfoText === "boolean" ? bShowInfoText : this[showValue];
+			this[_].showValue = typeof bShowInfoText === "boolean" ? bShowInfoText : this[_].showValue;
 			return this.draw();
 		},
 		get: function () {
-			return this[showValue];
+			return this[_].showValue;
 		}
 	},
 
@@ -262,11 +252,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	valueStyle: {
 		enumerable: true,
 		set: function (sInfoStyle) {
-			this[valueStyle] = typeof sInfoStyle === "string" ? sInfoStyle : this[valueStyle];
+			this[_].valueStyle = typeof sInfoStyle === "string" ? sInfoStyle : this[_].valueStyle;
 			return this.draw();
 		},
 		get: function () {
-			return this[valueStyle];
+			return this[_].valueStyle;
 		}
 	},
 
@@ -276,11 +266,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	valueColor: {
 		enumerable: true,
 		set: function (sInfoColor) {
-			this[valueColor] = typeof sInfoColor === "string" ? sInfoColor : this[valueColor];
+			this[_].valueColor = typeof sInfoColor === "string" ? sInfoColor : this[_].valueColor;
 			return this.draw();
 		},
 		get: function () {
-			return this[valueColor];
+			return this[_].valueColor;
 		}
 	},
 
@@ -349,8 +339,8 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	destroy: {
 		enumerable: true,
 		value: function () {
-			this[context2d] = null;
-			this[$canvas] = null;
+			this[_].context2d = null;
+			this[_].$canvas = null;
 			return this;
 		}
 	}

@@ -5,7 +5,7 @@ const ToggleSwitch = require("./ui/widgets").ToggleSwitch;
 const storage = require("./components/storage");
 const backgrounds = require("../data/backgrounds");
 
-const props = Symbol("props");
+const _ = Symbol("_");
 const aElements = [
 	"$wrapper",
 	"$backgroundImage",
@@ -43,9 +43,9 @@ function CountDown(mSettings) {
 	this.countDownStopHandler = this.onCountDownStop.bind(this);
 
 	// initialize the model and the view
-	this[props] = {};
-	this[props].view = new TimerView(mSettings.view);
-	this[props].clockView = new ClockView(mSettings.clockView);
+	this[_] = {};
+	this[_].view = new TimerView(mSettings.view);
+	this[_].clockView = new ClockView(mSettings.clockView);
 	return this.init(mSettings);
 }
 
@@ -74,12 +74,12 @@ CountDown.prototype = Object.create(Object.prototype, {
 			// init UI
 			for (var i = 0, $el; i < aElements.length; i++) {
 				$el = mSettings[aElements[i]];
-				this[props][aElements[i]] = $el instanceof HTMLElement ? $el : document.createElement("div");
+				this[_][aElements[i]] = $el instanceof HTMLElement ? $el : document.createElement("div");
 			}
 
 			// init toggle switch on the settings box
-			this[props].oHideZeroTilesSwitch = new ToggleSwitch({
-				$el: this[props].$hideZeroTiles,
+			this[_].oHideZeroTilesSwitch = new ToggleSwitch({
+				$el: this[_].$hideZeroTiles,
 				label: "Hide Zero tiles",
 				name: "hideZeroTiles",
 				state: 0,
@@ -89,8 +89,8 @@ CountDown.prototype = Object.create(Object.prototype, {
 			});
 
 			this.backgroundImage = null;
-			this[props].$countDown.appendChild(this.view.$el);
-			this[props].$infoBar.appendChild(this.clockView.$el);
+			this[_].$countDown.appendChild(this.view.$el);
+			this[_].$infoBar.appendChild(this.clockView.$el);
 			this._bindEvents();
 			this._loadData();
 			this.timer.start();
@@ -108,12 +108,12 @@ CountDown.prototype = Object.create(Object.prototype, {
 			if (data !== null) {
 				var date = Number.isInteger(data.final) ? new Date(data.final) : new Date();
 				this.timer.final = date;
-				this[props].$countDownDateTime.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().replace(/\.[0-9]{3}Z/, "");
-				this[props].$countDownText.value = data.ongoingText;
-				this[props].$endCountDownText.value = data.finalText;
-				this[props].$countDownEventDisplay.innerHTML = this[props].$endCountDownText.value;
-				this[props].$countDownDateTimeDisplay.innerHTML = "";
-				this[props].oHideZeroTilesSwitch.state = data.hideZeroTiles ? 1 : 0;
+				this[_].$countDownDateTime.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().replace(/\.[0-9]{3}Z/, "");
+				this[_].$countDownText.value = data.countdownText;
+				this[_].$endCountDownText.value = data.endCountdownText;
+				this[_].$countDownEventDisplay.innerHTML = this[_].$endCountDownText.value;
+				this[_].$countDownDateTimeDisplay.innerHTML = "";
+				this[_].oHideZeroTilesSwitch.state = data.hideZeroTiles ? 1 : 0;
 			}
 			return this;
 		}
@@ -122,7 +122,7 @@ CountDown.prototype = Object.create(Object.prototype, {
 	openSettingsMenu: {
 		enumerable: true,
 		value: function () {
-			this[props].$mainMenu.open = true;
+			this[_].$mainMenu.open = true;
 			return this;
 		}
 	},
@@ -130,7 +130,7 @@ CountDown.prototype = Object.create(Object.prototype, {
 	closeSettingsMenu: {
 		enumerable: true,
 		value: function () {
-			this[props].$mainMenu.open = false;
+			this[_].$mainMenu.open = false;
 			return this;
 		}
 	},
@@ -167,7 +167,7 @@ CountDown.prototype = Object.create(Object.prototype, {
 	view: {
 		enumerable: true,
 		get: function () {
-			return this[props].view;
+			return this[_].view;
 		}
 	},
 
@@ -177,7 +177,7 @@ CountDown.prototype = Object.create(Object.prototype, {
 	clockView: {
 		enumerable: true,
 		get: function () {
-			return this[props].clockView;
+			return this[_].clockView;
 		}
 	},
 
@@ -187,16 +187,16 @@ CountDown.prototype = Object.create(Object.prototype, {
 	backgroundImage: {
 		enumerable: true,
 		set: function () {
-			this[props].backgroundImage = CountDown.getRandomaBackgroundImage();
-			this[props].$backgroundImage.style.backgroundImage = `url(${this.backgroundImage.source})`;
-			// this[props].$photoBy.innerHTML = this.backgroundImage.source;
-			this[props].$photoOwner.innerHTML = this.backgroundImage.author;
-			this[props].$photoOwner.href = this.backgroundImage.link;
-			this[props].$photoName.innerHTML = this.backgroundImage.name;
+			this[_].backgroundImage = CountDown.getRandomaBackgroundImage();
+			this[_].$backgroundImage.style.backgroundImage = `url(${this.backgroundImage.source})`;
+			// this[_].$photoBy.innerHTML = this.backgroundImage.source;
+			this[_].$photoOwner.innerHTML = this.backgroundImage.author;
+			this[_].$photoOwner.href = this.backgroundImage.link;
+			this[_].$photoName.innerHTML = this.backgroundImage.name;
 			return this;
 		},
 		get: function () {
-			return this[props].backgroundImage;
+			return this[_].backgroundImage;
 		}
 	},
 
@@ -206,8 +206,8 @@ CountDown.prototype = Object.create(Object.prototype, {
 	 */
 	_bindEvents: {
 		value: function () {
-			this[props].$okBtn.addEventListener("click", this.okClickHandler);
-			this[props].$resetBtn.addEventListener("click", this.resetClickHandler);
+			this[_].$okBtn.addEventListener("click", this.okClickHandler);
+			this[_].$resetBtn.addEventListener("click", this.resetClickHandler);
 			this.timer.on("start", this.countDownStartHandler);
 			this.timer.on("stop", this.countDownStopHandler);
 			return this;
@@ -219,8 +219,8 @@ CountDown.prototype = Object.create(Object.prototype, {
 	 */
 	_unbindEvents: {
 		value: function () {
-			this[props].$okBtn.removeEventListener("click", this.okClickHandler);
-			this[props].$resetBtn.removeEventListener("click", this.resetClickHandler);
+			this[_].$okBtn.removeEventListener("click", this.okClickHandler);
+			this[_].$resetBtn.removeEventListener("click", this.resetClickHandler);
 			this.timer.removeListener("start", this.countDownStartHandler);
 			this.timer.removeListener("stop", this.countDownStopHandler);
 			return this;
@@ -233,13 +233,13 @@ CountDown.prototype = Object.create(Object.prototype, {
 	onOkClick: {
 		value: function (oEvent) {
 			this.timer.stop();
-			this[props].$countDownDateTime.value.replace(/([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?:\:([0-9]{2}))?/, function () {
+			this[_].$countDownDateTime.value.replace(/([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?:\:([0-9]{2}))?/, function () {
 				var args = arguments,
 					now = new Date(args[1], parseInt(args[2]) - 1, args[3], args[4], args[5], args[6] || 0);
 				this.timer.final = now;
 			}.bind(this));
 			this.timer.start();
-			this[props].$mainMenu.open = false;
+			this[_].$mainMenu.open = false;
 			return this;
 		}
 	},
@@ -260,15 +260,15 @@ CountDown.prototype = Object.create(Object.prototype, {
 	 */
 	onCountDownStart: {
 		value: function (oSrc) {
-			// this[props].$title.classList.remove("hourglass");
-			// this[props].$title.classList.add("hourglass-on");
-			this[props].$countDownEventDisplay.innerHTML = this[props].$countDownText.value;
-			this[props].$countDownDateTimeDisplay.innerHTML = `(${new Date(oSrc.final).toLocaleString()})`;
+			// this[_].$title.classList.remove("hourglass");
+			// this[_].$title.classList.add("hourglass-on");
+			this[_].$countDownEventDisplay.innerHTML = this[_].$countDownText.value;
+			this[_].$countDownDateTimeDisplay.innerHTML = `(${new Date(oSrc.final).toLocaleString()})`;
 			storage.set({
 				final: this.timer.final.getTime(),
-				ongoingText: this[props].$countDownText.value,
-				finalText: this[props].$endCountDownText.value,
-				hideZeroTiles: !!this[props].oHideZeroTilesSwitch.state
+				countdownText: this[_].$countDownText.value,
+				endCountdownText: this[_].$endCountDownText.value,
+				hideZeroTiles: !!this[_].oHideZeroTilesSwitch.state
 			});
 			return this;
 		}
@@ -279,10 +279,10 @@ CountDown.prototype = Object.create(Object.prototype, {
 	 */
 	onCountDownStop: {
 		value: function (oEvent) {
-			// this[props].$title.classList.remove("hourglass-on");
-			// this[props].$title.classList.add("hourglass");
-			this[props].$countDownEventDisplay.innerHTML = this[props].$endCountDownText.value;
-			this[props].$countDownDateTimeDisplay.innerHTML = storage.DEFAULTS.finalText; // "Coundown Over";
+			// this[_].$title.classList.remove("hourglass-on");
+			// this[_].$title.classList.add("hourglass");
+			this[_].$countDownEventDisplay.innerHTML = this[_].$endCountDownText.value;
+			this[_].$countDownDateTimeDisplay.innerHTML = storage.DEFAULTS.endCountdownText; // "Coundown Over";
 			storage.reset();
 			return this;
 		}

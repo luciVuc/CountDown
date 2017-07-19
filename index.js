@@ -409,27 +409,35 @@ module.exports = [
 },{}],3:[function(require,module,exports){
 const EventEmitter = require("events");
 
-const props = Symbol("props");
+const _ = Symbol("_");
 
-const tickInterval = Symbol("tickInterval");
-const onupdate = Symbol("onupdate");
-const onstart = Symbol("onstart");
-const onstop = Symbol("onstop");
-const onready = Symbol("onready");
-
-
+/**
+ * @public Clock
+ * 
+ * @param {object} mSettings 
+ * @param {Date} mSettings.date
+ * @param {Intl.DateTimeFormat} mSettings.DateTimeFormat
+ * @param {function} mSettings.onstart 
+ * @param {function} mSettings.onupdate
+ * @returns {Clock} self reference
+ */
 function Clock(mSettings) {
   mSettings = typeof mSettings === "object" ? mSettings : {};
-  this[props] = {};
   EventEmitter.apply(this, arguments);
-  this[props].onupdate = typeof mSettings.onupdate === "function" ? mSettings.onupdate : null;
-  this[props].onstart = typeof mSettings.onstart === "function" ? mSettings.onstart : null;
-	this[props].tickInterval = null;
+  this[_] = {};
+  this[_].onupdate = typeof mSettings.onupdate === "function" ? mSettings.onupdate : null;
+  this[_].onstart = typeof mSettings.onstart === "function" ? mSettings.onstart : null;
+	this[_].tickInterval = null;
   this.date = mSettings.date instanceof Date ? mSettings.date : new Date();
   this.dateTimeFormat = mSettings.dateTimeFormat instanceof Intl.DateTimeFormat ? mSettings.dateTimeFormat : new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit' });
   return this;
 }
 
+/**
+ * @public Returns the number of minutes of a date
+ * @param {Date} oDate
+ * @returns {integer} Minutes
+ */
 Clock.getMinutes = function (oDate) {
   if (oDate instanceof Date) {
     return Math.floor(oDate.valueOf() / 1000 / 60);
@@ -443,29 +451,35 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     value: Clock
   },
 
+	/**
+	 * @public	property
+	 */
   date: {
     enumerable: true,
     set: function (oDate) {
       if (oDate instanceof Date) {
-        this[props].date = oDate;
+        this[_].date = oDate;
       }
       return this;
     },
     get: function () {
-      return this[props].date;
+      return this[_].date;
     }
   },
 
+	/**
+	 * @public	property
+	 */
   dateTimeFormat: {
     enumerable: true,
     set: function (oArg) {
       if (oArg instanceof Intl.DateTimeFormat) {
-        this[props].dateTimeFormat = oArg;
+        this[_].dateTimeFormat = oArg;
       }
       return this;
     },
     get: function () {
-      return this[props].dateTimeFormat;
+      return this[_].dateTimeFormat;
     }
   },
 
@@ -483,12 +497,12 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[props].onupdate = fn;
+				this[_].onupdate = fn;
 			}
 			return this;
 		},
 		get: function () {
-			return this[props].onupdate;
+			return this[_].onupdate;
 		}
 	},
 
@@ -499,11 +513,11 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[props].onstart = fn;
+				this[_].onstart = fn;
 			}
 		},
 		get: function () {
-			return this[props].onstart;
+			return this[_].onstart;
 		}
 	},
 
@@ -529,6 +543,9 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     }
   },
 
+  /**
+   * @public
+   */
   update: {
     enumerable: true,
     value: function () {
@@ -544,10 +561,13 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     }
   },
 
+  /**
+   * @public
+   */
   start: {
     enumerable: true,
     value: function () {
-      this[props].tickInterval = window.setInterval(this.update.bind(this), 2000);
+      this[_].tickInterval = window.setInterval(this.update.bind(this), 2000);
 			this.emit("start", this);
 			if (typeof this.onstart === "function") {
 				this.onstart(this);
@@ -566,12 +586,12 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
 	destroy: {
 		enumerable: true,
 		value: function () {
-			this[props].date = null;
-			this[props].dateTimeFormat = null;
+			this[_].date = null;
+			this[_].dateTimeFormat = null;
 			this.removeAllListeners("start");
 			this.removeAllListeners("update");
-      clearInterval(this[props].tickInterval);
-      this[props].tickInterval = null;
+      clearInterval(this[_].tickInterval);
+      this[_].tickInterval = null;
 			return this;
 		}
   }
@@ -581,8 +601,8 @@ module.exports = Clock;
 },{"events":1}],4:[function(require,module,exports){
 const sKey = "countdown";
 const DEFAULTS = {
-	ongoingText: "Countdown is Over",
-	finalText: "Countdown Over",
+	countdownText: "Countdown is Over",
+	endCountdownText: "Countdown Over",
 	hideZeroTiles: false
 };
 
@@ -613,8 +633,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 	 * @returns {object}	The countdown data as a literal object with the following properties
 	 * <ul>
 	 * 	<li>final, {integer}</li>
-	 * 	<li>ongoingText, {string}</li>
-	 * 	<li>finalText, {string}</li>
+	 * 	<li>countdownText, {string}</li>
+	 * 	<li>endCountdownText, {string}</li>
 	 * </ul>
 	 */
 	get: {
@@ -626,8 +646,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			json = json instanceof Object ? json : {};
 			var m = {
 				final: Number.isInteger(json.final) ? json.final : Date.now(),
-				ongoingText: typeof json.ongoingText === "string" ? json.ongoingText : DEFAULTS.ongoingText,
-				finalText: typeof json.finalText === "string" ? json.finalText : DEFAULTS.finalText,
+				countdownText: typeof json.countdownText === "string" ? json.countdownText : DEFAULTS.countdownText,
+				endCountdownText: typeof json.endCountdownText === "string" ? json.endCountdownText : DEFAULTS.endCountdownText,
 				hideZeroTiles: !!json.hideZeroTiles
 			};
 			return m;
@@ -639,8 +659,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 	 * 
 	 * @param mJSON	{object}	countdown data to be stored
 	 * @param mJSON.final	{integer}	countdown final date and time, in milliseconds
-	 * @param mJSON.ongoingText	{string}	Text to display while counting down
-	 * @param mJSON.finalText	{string}	Text to display when countdown is over
+	 * @param mJSON.countdownText	{string}	Text to display while counting down
+	 * @param mJSON.endCountdownText	{string}	Text to display when countdown is over
 	 */
 	set: {
 		enumerable: true,
@@ -648,8 +668,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 			mJSON = mJSON instanceof Object ? mJSON : {};
 			var m = {
 				final: Number.isInteger(mJSON.final) ? mJSON.final : null,
-				ongoingText: typeof mJSON.ongoingText === "string" ? mJSON.ongoingText : DEFAULTS.ongoingText,
-				finalText: typeof mJSON.finalText === "string" ? mJSON.finalText : DEFAULTS.finalText,
+				countdownText: typeof mJSON.countdownText === "string" ? mJSON.countdownText : DEFAULTS.countdownText,
+				endCountdownText: typeof mJSON.endCountdownText === "string" ? mJSON.endCountdownText : DEFAULTS.endCountdownText,
 				hideZeroTiles: !!mJSON.hideZeroTiles
 			};
 			localStorage.setItem(sKey, JSON.stringify(m));
@@ -665,8 +685,8 @@ DataStore.prototype = Object.create(Object.prototype, {
 		value: function () {
 			var m = {
 				final: null,
-				ongoingText: DEFAULTS.ongoingText,
-				finalText: DEFAULTS.finalText,
+				countdownText: DEFAULTS.countdownText,
+				endCountdownText: DEFAULTS.endCountdownText,
 				hideZeroTiles: DEFAULTS.hideZeroTiles
 			};
 			localStorage.setItem(sKey, JSON.stringify(m));
@@ -690,16 +710,7 @@ module.exports = new DataStore();
 },{}],5:[function(require,module,exports){
 const EventEmitter = require("events");
 
-const final = Symbol("final");
-const daysLeft = Symbol("daysLeft");
-const hoursLeft = Symbol("hoursLeft");
-const minutesLeft = Symbol("minutesLeft");
-const secondsLeft = Symbol("secondsLeft");
-const tickInterval = Symbol("tickInterval");
-const onupdate = Symbol("onupdate");
-const onstart = Symbol("onstart");
-const onstop = Symbol("onstop");
-const onready = Symbol("onready");
+const _ = Symbol("_");
 
 /**
  * @public	Timer object
@@ -716,16 +727,17 @@ function Timer(mSettings) {
 	EventEmitter.apply(this, arguments);
 	mSettings = mSettings instanceof Object ? mSettings : {};
 	// this.final = Number.isInteger(mSettings.finalTime) ? mSettings.finalTime : Date.now() + 10;
+	this[_] = {};
 	this.final = mSettings.finalDateTime instanceof Date ? mSettings.finalDateTime : new Date();
-	this[daysLeft] = 0;
-	this[hoursLeft] = 0;
-	this[minutesLeft] = 0;
-	this[secondsLeft] = 0;
-	this[onupdate] = mSettings.onupdate || null;
-	this[onstart] = mSettings.onstart || null;
-	this[onstop] = mSettings.onstop || null;
-	this[onready] = mSettings.onready || null;
-	this[tickInterval] = null;
+	this[_].daysLeft = 0;
+	this[_].hoursLeft = 0;
+	this[_].minutesLeft = 0;
+	this[_].secondsLeft = 0;
+	this[_].onupdate = mSettings.onupdate || null;
+	this[_].onstart = mSettings.onstart || null;
+	this[_].onstop = mSettings.onstop || null;
+	this[_].onready = mSettings.onready || null;
+	this[_].tickInterval = null;
 	return this;
 }
 
@@ -742,12 +754,12 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (oDate) {
 			if (oDate instanceof Date && oDate.getTime() >= Date.now()) {
-				this[final] = oDate;
+				this[_].final = oDate;
 			}
 			return this;
 		},
 		get: function () {
-			return this[final];
+			return this[_].final;
 		}
 	},
 
@@ -757,7 +769,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	daysLeft: {
 		enumerable: true,
 		get: function () {
-			return this[daysLeft];
+			return this[_].daysLeft;
 		}
 	},
 
@@ -767,7 +779,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	hoursLeft: {
 		enumerable: true,
 		get: function () {
-			return this[hoursLeft];
+			return this[_].hoursLeft;
 		}
 	},
 
@@ -777,7 +789,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	minutesLeft: {
 		enumerable: true,
 		get: function () {
-			return this[minutesLeft];
+			return this[_].minutesLeft;
 		}
 	},
 
@@ -787,7 +799,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	secondsLeft: {
 		enumerable: true,
 		get: function () {
-			return this[secondsLeft];
+			return this[_].secondsLeft;
 		}
 	},
 
@@ -798,12 +810,12 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[onupdate] = fn;
+				this[_].onupdate = fn;
 			}
 			return this;
 		},
 		get: function () {
-			return this[onupdate];
+			return this[_].onupdate;
 		}
 	},
 
@@ -814,11 +826,11 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[onstart] = fn;
+				this[_].onstart = fn;
 			}
 		},
 		get: function () {
-			return this[onstart];
+			return this[_].onstart;
 		}
 	},
 
@@ -829,11 +841,11 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[onstop] = fn;
+				this[_].onstop = fn;
 			}
 		},
 		get: function () {
-			return this[onstop];
+			return this[_].onstop;
 		}
 	},
 
@@ -844,11 +856,11 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[onready] = fn;
+				this[_].onready = fn;
 			}
 		},
 		get: function () {
-			return this[onready];
+			return this[_].onready;
 		}
 	},
 
@@ -876,10 +888,10 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 
 			if (diff > 0) {
 				// re-calculate the days, hours, minutes and seconds left
-				this[daysLeft] = Math.floor(diff / 1000 / 60 / 60 / 24);
-				this[hoursLeft] = Math.floor(diff / 1000 / 60 / 60 % 24);
-				this[minutesLeft] = Math.floor(diff / 1000 / 60 % 60);
-				this[secondsLeft] = Math.floor(diff / 1000 % 60);
+				this[_].daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24);
+				this[_].hoursLeft = Math.floor(diff / 1000 / 60 / 60 % 24);
+				this[_].minutesLeft = Math.floor(diff / 1000 / 60 % 60);
+				this[_].secondsLeft = Math.floor(diff / 1000 % 60);
 				this.emit("update", this);
 				if (typeof this.onupdate === "function") {
 					this.onupdate(this);
@@ -905,7 +917,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		value: function () {
 			if (this.final.getTime() > Date.now()) {
 				// start updating the count down every 1 second
-				this[tickInterval] = setInterval(this.update.bind(this), 250);
+				this[_].tickInterval = setInterval(this.update.bind(this), 250);
 			} else {
 				this.update();
 			}
@@ -923,8 +935,8 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	stop: {
 		enumerable: true,
 		value: function () {
-			clearInterval(this[tickInterval]);
-			this[tickInterval] = null;
+			clearInterval(this[_].tickInterval);
+			this[_].tickInterval = null;
 			// this.update();
 			this.emit("stop", this);
 			if (typeof this.onstop === "function") {
@@ -939,7 +951,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	destroy: {
 		enumerable: true,
 		value: function () {
-			this[final] = null;
+			this[_].final = null;
 			this.removeAllListeners("start");
 			this.removeAllListeners("stop");
 			this.removeAllListeners("update");
@@ -960,7 +972,7 @@ const ToggleSwitch = require("./ui/widgets").ToggleSwitch;
 const storage = require("./components/storage");
 const backgrounds = require("../data/backgrounds");
 
-const props = Symbol("props");
+const _ = Symbol("_");
 const aElements = [
 	"$wrapper",
 	"$backgroundImage",
@@ -998,9 +1010,9 @@ function CountDown(mSettings) {
 	this.countDownStopHandler = this.onCountDownStop.bind(this);
 
 	// initialize the model and the view
-	this[props] = {};
-	this[props].view = new TimerView(mSettings.view);
-	this[props].clockView = new ClockView(mSettings.clockView);
+	this[_] = {};
+	this[_].view = new TimerView(mSettings.view);
+	this[_].clockView = new ClockView(mSettings.clockView);
 	return this.init(mSettings);
 }
 
@@ -1029,12 +1041,12 @@ CountDown.prototype = Object.create(Object.prototype, {
 			// init UI
 			for (var i = 0, $el; i < aElements.length; i++) {
 				$el = mSettings[aElements[i]];
-				this[props][aElements[i]] = $el instanceof HTMLElement ? $el : document.createElement("div");
+				this[_][aElements[i]] = $el instanceof HTMLElement ? $el : document.createElement("div");
 			}
 
 			// init toggle switch on the settings box
-			this[props].oHideZeroTilesSwitch = new ToggleSwitch({
-				$el: this[props].$hideZeroTiles,
+			this[_].oHideZeroTilesSwitch = new ToggleSwitch({
+				$el: this[_].$hideZeroTiles,
 				label: "Hide Zero tiles",
 				name: "hideZeroTiles",
 				state: 0,
@@ -1044,8 +1056,8 @@ CountDown.prototype = Object.create(Object.prototype, {
 			});
 
 			this.backgroundImage = null;
-			this[props].$countDown.appendChild(this.view.$el);
-			this[props].$infoBar.appendChild(this.clockView.$el);
+			this[_].$countDown.appendChild(this.view.$el);
+			this[_].$infoBar.appendChild(this.clockView.$el);
 			this._bindEvents();
 			this._loadData();
 			this.timer.start();
@@ -1063,12 +1075,12 @@ CountDown.prototype = Object.create(Object.prototype, {
 			if (data !== null) {
 				var date = Number.isInteger(data.final) ? new Date(data.final) : new Date();
 				this.timer.final = date;
-				this[props].$countDownDateTime.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().replace(/\.[0-9]{3}Z/, "");
-				this[props].$countDownText.value = data.ongoingText;
-				this[props].$endCountDownText.value = data.finalText;
-				this[props].$countDownEventDisplay.innerHTML = this[props].$endCountDownText.value;
-				this[props].$countDownDateTimeDisplay.innerHTML = "";
-				this[props].oHideZeroTilesSwitch.state = data.hideZeroTiles ? 1 : 0;
+				this[_].$countDownDateTime.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().replace(/\.[0-9]{3}Z/, "");
+				this[_].$countDownText.value = data.countdownText;
+				this[_].$endCountDownText.value = data.endCountdownText;
+				this[_].$countDownEventDisplay.innerHTML = this[_].$endCountDownText.value;
+				this[_].$countDownDateTimeDisplay.innerHTML = "";
+				this[_].oHideZeroTilesSwitch.state = data.hideZeroTiles ? 1 : 0;
 			}
 			return this;
 		}
@@ -1077,7 +1089,7 @@ CountDown.prototype = Object.create(Object.prototype, {
 	openSettingsMenu: {
 		enumerable: true,
 		value: function () {
-			this[props].$mainMenu.open = true;
+			this[_].$mainMenu.open = true;
 			return this;
 		}
 	},
@@ -1085,7 +1097,7 @@ CountDown.prototype = Object.create(Object.prototype, {
 	closeSettingsMenu: {
 		enumerable: true,
 		value: function () {
-			this[props].$mainMenu.open = false;
+			this[_].$mainMenu.open = false;
 			return this;
 		}
 	},
@@ -1122,7 +1134,7 @@ CountDown.prototype = Object.create(Object.prototype, {
 	view: {
 		enumerable: true,
 		get: function () {
-			return this[props].view;
+			return this[_].view;
 		}
 	},
 
@@ -1132,7 +1144,7 @@ CountDown.prototype = Object.create(Object.prototype, {
 	clockView: {
 		enumerable: true,
 		get: function () {
-			return this[props].clockView;
+			return this[_].clockView;
 		}
 	},
 
@@ -1142,16 +1154,16 @@ CountDown.prototype = Object.create(Object.prototype, {
 	backgroundImage: {
 		enumerable: true,
 		set: function () {
-			this[props].backgroundImage = CountDown.getRandomaBackgroundImage();
-			this[props].$backgroundImage.style.backgroundImage = `url(${this.backgroundImage.source})`;
-			// this[props].$photoBy.innerHTML = this.backgroundImage.source;
-			this[props].$photoOwner.innerHTML = this.backgroundImage.author;
-			this[props].$photoOwner.href = this.backgroundImage.link;
-			this[props].$photoName.innerHTML = this.backgroundImage.name;
+			this[_].backgroundImage = CountDown.getRandomaBackgroundImage();
+			this[_].$backgroundImage.style.backgroundImage = `url(${this.backgroundImage.source})`;
+			// this[_].$photoBy.innerHTML = this.backgroundImage.source;
+			this[_].$photoOwner.innerHTML = this.backgroundImage.author;
+			this[_].$photoOwner.href = this.backgroundImage.link;
+			this[_].$photoName.innerHTML = this.backgroundImage.name;
 			return this;
 		},
 		get: function () {
-			return this[props].backgroundImage;
+			return this[_].backgroundImage;
 		}
 	},
 
@@ -1161,8 +1173,8 @@ CountDown.prototype = Object.create(Object.prototype, {
 	 */
 	_bindEvents: {
 		value: function () {
-			this[props].$okBtn.addEventListener("click", this.okClickHandler);
-			this[props].$resetBtn.addEventListener("click", this.resetClickHandler);
+			this[_].$okBtn.addEventListener("click", this.okClickHandler);
+			this[_].$resetBtn.addEventListener("click", this.resetClickHandler);
 			this.timer.on("start", this.countDownStartHandler);
 			this.timer.on("stop", this.countDownStopHandler);
 			return this;
@@ -1174,8 +1186,8 @@ CountDown.prototype = Object.create(Object.prototype, {
 	 */
 	_unbindEvents: {
 		value: function () {
-			this[props].$okBtn.removeEventListener("click", this.okClickHandler);
-			this[props].$resetBtn.removeEventListener("click", this.resetClickHandler);
+			this[_].$okBtn.removeEventListener("click", this.okClickHandler);
+			this[_].$resetBtn.removeEventListener("click", this.resetClickHandler);
 			this.timer.removeListener("start", this.countDownStartHandler);
 			this.timer.removeListener("stop", this.countDownStopHandler);
 			return this;
@@ -1188,13 +1200,13 @@ CountDown.prototype = Object.create(Object.prototype, {
 	onOkClick: {
 		value: function (oEvent) {
 			this.timer.stop();
-			this[props].$countDownDateTime.value.replace(/([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?:\:([0-9]{2}))?/, function () {
+			this[_].$countDownDateTime.value.replace(/([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?:\:([0-9]{2}))?/, function () {
 				var args = arguments,
 					now = new Date(args[1], parseInt(args[2]) - 1, args[3], args[4], args[5], args[6] || 0);
 				this.timer.final = now;
 			}.bind(this));
 			this.timer.start();
-			this[props].$mainMenu.open = false;
+			this[_].$mainMenu.open = false;
 			return this;
 		}
 	},
@@ -1215,15 +1227,15 @@ CountDown.prototype = Object.create(Object.prototype, {
 	 */
 	onCountDownStart: {
 		value: function (oSrc) {
-			// this[props].$title.classList.remove("hourglass");
-			// this[props].$title.classList.add("hourglass-on");
-			this[props].$countDownEventDisplay.innerHTML = this[props].$countDownText.value;
-			this[props].$countDownDateTimeDisplay.innerHTML = `(${new Date(oSrc.final).toLocaleString()})`;
+			// this[_].$title.classList.remove("hourglass");
+			// this[_].$title.classList.add("hourglass-on");
+			this[_].$countDownEventDisplay.innerHTML = this[_].$countDownText.value;
+			this[_].$countDownDateTimeDisplay.innerHTML = `(${new Date(oSrc.final).toLocaleString()})`;
 			storage.set({
 				final: this.timer.final.getTime(),
-				ongoingText: this[props].$countDownText.value,
-				finalText: this[props].$endCountDownText.value,
-				hideZeroTiles: !!this[props].oHideZeroTilesSwitch.state
+				countdownText: this[_].$countDownText.value,
+				endCountdownText: this[_].$endCountDownText.value,
+				hideZeroTiles: !!this[_].oHideZeroTilesSwitch.state
 			});
 			return this;
 		}
@@ -1234,10 +1246,10 @@ CountDown.prototype = Object.create(Object.prototype, {
 	 */
 	onCountDownStop: {
 		value: function (oEvent) {
-			// this[props].$title.classList.remove("hourglass-on");
-			// this[props].$title.classList.add("hourglass");
-			this[props].$countDownEventDisplay.innerHTML = this[props].$endCountDownText.value;
-			this[props].$countDownDateTimeDisplay.innerHTML = storage.DEFAULTS.finalText; // "Coundown Over";
+			// this[_].$title.classList.remove("hourglass-on");
+			// this[_].$title.classList.add("hourglass");
+			this[_].$countDownEventDisplay.innerHTML = this[_].$endCountDownText.value;
+			this[_].$countDownDateTimeDisplay.innerHTML = storage.DEFAULTS.endCountdownText; // "Coundown Over";
 			storage.reset();
 			return this;
 		}
@@ -1468,13 +1480,13 @@ module.exports = true;
 const EventEmitter = require("events");
 const Clock = require("../components/clock");
 
-const props = Symbol("props");
+const _ = Symbol("_");
 
 function ClockView (mSettings) {
   EventEmitter.apply(this, arguments);
   mSettings = typeof mSettings === "object" ? mSettings : {};
-  this[props] = {};
-  this[props].$el = null;
+  this[_] = {};
+  this[_].$el = null;
 	this.onUpdate = this.update.bind(this);
 	this.onStart = this.start.bind(this);
   this.clock = mSettings.clock instanceof Clock ? mSettings.clock : new Clock();
@@ -1493,13 +1505,13 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
     enumerable: true,
     set: function (oArg) {
       if (oArg instanceof Clock) {
-        this[props].clock = oArg;
+        this[_].clock = oArg;
         this.render();
       }
       return this;
     },
     get: function () {
-      return this[props].clock;
+      return this[_].clock;
     }
   },
 
@@ -1509,10 +1521,10 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
 	$el: {
 		enumerable: true,
 		get: function () {
-			if (!(this[props].$el instanceof HTMLElement)) {
+			if (!(this[_].$el instanceof HTMLElement)) {
 				this.render();
 			}
-			return this[props].$el;
+			return this[_].$el;
 		}
 	},
 
@@ -1538,8 +1550,8 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
 			if (!(this.$el instanceof HTMLElement)) {
 				this.render();
 			}
-      this[props].$time.innerHTML = this.clock.formattedTime;
-      this[props].$timePeriod.innerHTML = this.clock.formattedTimePeriod;
+      this[_].$time.innerHTML = this.clock.formattedTime;
+      this[_].$timePeriod.innerHTML = this.clock.formattedTimePeriod;
 			return this;
 		}
 	},
@@ -1552,10 +1564,10 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
 			el.innerHTML = `<div class="clock">
         <span class="time">${this.clock.formattedTime}</span><span class="timePeriod">${this.clock.formattedTimePeriod}</span>
       </div>`;
-			this[props].$el = el.querySelector(".clock");
+			this[_].$el = el.querySelector(".clock");
 			el = el.removeChild(this.$el);
-			this[props].$time = el.querySelector(".time");
-			this[props].$timePeriod = el.querySelector(".timePeriod");
+			this[_].$time = el.querySelector(".time");
+			this[_].$timePeriod = el.querySelector(".timePeriod");
 			return this;
     }
 	},
@@ -1568,8 +1580,8 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
 		value: function () {
 			this.clock.removeAllListeners("start");
       this.clock.removeAllListeners("update");
-      this[props].clock = null;
-      this[props] = null;
+      this[_].clock = null;
+      this[_] = null;
       this.onUpdate = null;
       this.onStart = null;
 			return this;
@@ -1605,18 +1617,7 @@ function drawPieSlice(oContext, centerX, centerY, radius, startAngle, endAngle, 
 	return oContext;
 }
 
-const $canvas = Symbol("$canvas");
-const ctx = Symbol("ctx");
-const min = Symbol("min");
-const max = Symbol("max");
-const value = Symbol("value");
-const lineWidth = Symbol("lineWidth");
-const lineFill = Symbol("lineFill");
-const backLineFill = Symbol("backLineFill");
-const bgFill = Symbol("bgFill");
-const showValue = Symbol("showValue");
-const valueStyle = Symbol("valueStyle");
-const valueColor = Symbol("valueColor");
+const _ = Symbol("_");
 
 /**
  * @public	Displays a round, doughnut-like progress bar, using HTML canvas.
@@ -1637,17 +1638,18 @@ const valueColor = Symbol("valueColor");
 function ProgressCircle(mSettings) {
 	mSettings = mSettings instanceof Object ? mSettings : {};
 	EventEmitter.apply(this, arguments);
+	this[_] = {};
 	this.$canvas = mSettings.$canvas;
-	this[min] = Number.isInteger(mSettings.min) ? mSettings.min : 0;
-	this[max] = Number.isInteger(mSettings.max) ? mSettings.max : 100;
-	this[value] = Number.isInteger(mSettings.value) ? mSettings.value : 0;
-	this[lineWidth] = Number.isInteger(mSettings.lineWidth) ? mSettings.lineWidth : 3;
-	this[lineFill] = typeof mSettings.lineFill === "string" ? mSettings.lineFill : "#CCB566";
-	this[backLineFill] = typeof mSettings.backLineFill === "string" ? mSettings.backLineFill : "#FB6929";
-	this[bgFill] = typeof mSettings.bgFill === "string" ? mSettings.bgFill : "#F8FF8E";
-	this[showValue] = typeof mSettings.showValue === "boolean" ? mSettings.showValue : true;
-	this[valueStyle] = typeof mSettings.valueStyle === "string" ? mSettings.valueStyle : "bold " + this.radius * 0.8 + "px sans-serif";
-	this[valueColor] = typeof mSettings.valueColor === "string" ? mSettings.valueColor : "red";
+	this[_].min = Number.isInteger(mSettings.min) ? mSettings.min : 0;
+	this[_].max = Number.isInteger(mSettings.max) ? mSettings.max : 100;
+	this[_].value = Number.isInteger(mSettings.value) ? mSettings.value : 0;
+	this[_].lineWidth = Number.isInteger(mSettings.lineWidth) ? mSettings.lineWidth : 3;
+	this[_].lineFill = typeof mSettings.lineFill === "string" ? mSettings.lineFill : "#CCB566";
+	this[_].backLineFill = typeof mSettings.backLineFill === "string" ? mSettings.backLineFill : "#FB6929";
+	this[_].bgFill = typeof mSettings.bgFill === "string" ? mSettings.bgFill : "#F8FF8E";
+	this[_].showValue = typeof mSettings.showValue === "boolean" ? mSettings.showValue : true;
+	this[_].valueStyle = typeof mSettings.valueStyle === "string" ? mSettings.valueStyle : "bold " + this.radius * 0.8 + "px sans-serif";
+	this[_].valueColor = typeof mSettings.valueColor === "string" ? mSettings.valueColor : "red";
 	return this.draw();
 }
 
@@ -1671,12 +1673,12 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 			if (!($Canvas instanceof HTMLCanvasElement)) {
 				throw new Error("No Canvas support");
 			}
-			this[$canvas] = $Canvas;
-			this[ctx] = $Canvas.getContext("2d");
+			this[_].$canvas = $Canvas;
+			this[_].ctx = $Canvas.getContext("2d");
 			return this.draw();
 		},
 		get: function () {
-			return this[ctx];
+			return this[_].ctx;
 		}
 	},
 
@@ -1686,7 +1688,7 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	context2d: {
 		enumerable: true,
 		get: function () {
-			return this[ctx];
+			return this[_].ctx;
 		}
 	},
 
@@ -1696,7 +1698,7 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	x: {
 		enumerable: true,
 		get: function () {
-			return this[ctx].canvas.width / 2;
+			return this[_].ctx.canvas.width / 2;
 		}
 	},
 
@@ -1706,7 +1708,7 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	y: {
 		enumerable: true,
 		get: function () {
-			return this[ctx].canvas.height / 2;
+			return this[_].ctx.canvas.height / 2;
 		}
 	},
 
@@ -1727,12 +1729,12 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (iMin) {
 			if (Number.isInteger(iMin)) {
-				this[min] = iMin;
+				this[_].min = iMin;
 			}
 			return this.draw();
 		},
 		get: function () {
-			return this[min];
+			return this[_].min;
 		}
 	},
 
@@ -1743,12 +1745,12 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (iMax) {
 			if (Number.isInteger(iMax)) {
-				this[max] = iMax;
+				this[_].max = iMax;
 			}
 			return this.draw();
 		},
 		get: function () {
-			return this[max];
+			return this[_].max;
 		}
 	},
 
@@ -1759,12 +1761,12 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (iValue) {
 			if (Number.isInteger(iValue) && iValue >= this.min && iValue <= this.max) {
-				this[value] = iValue;
+				this[_].value = iValue;
 			}
 			return this.draw();
 		},
 		get: function () {
-			return this[value];
+			return this[_].value;
 		}
 	},
 
@@ -1774,11 +1776,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	lineWidth: {
 		enumerable: true,
 		set: function (iLineWidth) {
-			this[lineWidth] = Number.isInteger(iLineWidth) ? Math.abs(iLineWidth) : this[lineWidth];
+			this[_].lineWidth = Number.isInteger(iLineWidth) ? Math.abs(iLineWidth) : this[_].lineWidth;
 			return this.draw();
 		},
 		get: function () {
-			return this[lineWidth];
+			return this[_].lineWidth;
 		}
 	},
 
@@ -1788,11 +1790,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	lineFill: {
 		enumerable: true,
 		set: function (sLineFill) {
-			this[lineFill] = typeof sLineFill === "string" ? sLineFill : this[lineFill];
+			this[_].lineFill = typeof sLineFill === "string" ? sLineFill : this[_].lineFill;
 			return this.draw();
 		},
 		get: function () {
-			return this[lineFill];
+			return this[_].lineFill;
 		}
 	},
 
@@ -1802,11 +1804,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	backLineFill: {
 		enumerable: true,
 		set: function (sBackLineFill) {
-			this[backLineFill] = typeof sBackLineFill === "string" ? sBackLineFill : this[backLineFill];
+			this[_].backLineFill = typeof sBackLineFill === "string" ? sBackLineFill : this[_].backLineFill;
 			return this.draw();
 		},
 		get: function () {
-			return this[backLineFill];
+			return this[_].backLineFill;
 		}
 	},
 
@@ -1816,11 +1818,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	bgFill: {
 		enumerable: true,
 		set: function (sBgFill) {
-			this[bgFill] = typeof sBgFill === "string" ? sBgFill : this[bgFill];
+			this[_].bgFill = typeof sBgFill === "string" ? sBgFill : this[_].bgFill;
 			return this.draw();
 		},
 		get: function () {
-			return this[bgFill];
+			return this[_].bgFill;
 		}
 	},
 
@@ -1830,11 +1832,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	showValue: {
 		enumerable: true,
 		set: function (bShowInfoText) {
-			this[showValue] = typeof bShowInfoText === "boolean" ? bShowInfoText : this[showValue];
+			this[_].showValue = typeof bShowInfoText === "boolean" ? bShowInfoText : this[_].showValue;
 			return this.draw();
 		},
 		get: function () {
-			return this[showValue];
+			return this[_].showValue;
 		}
 	},
 
@@ -1844,11 +1846,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	valueStyle: {
 		enumerable: true,
 		set: function (sInfoStyle) {
-			this[valueStyle] = typeof sInfoStyle === "string" ? sInfoStyle : this[valueStyle];
+			this[_].valueStyle = typeof sInfoStyle === "string" ? sInfoStyle : this[_].valueStyle;
 			return this.draw();
 		},
 		get: function () {
-			return this[valueStyle];
+			return this[_].valueStyle;
 		}
 	},
 
@@ -1858,11 +1860,11 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	valueColor: {
 		enumerable: true,
 		set: function (sInfoColor) {
-			this[valueColor] = typeof sInfoColor === "string" ? sInfoColor : this[valueColor];
+			this[_].valueColor = typeof sInfoColor === "string" ? sInfoColor : this[_].valueColor;
 			return this.draw();
 		},
 		get: function () {
-			return this[valueColor];
+			return this[_].valueColor;
 		}
 	},
 
@@ -1931,8 +1933,8 @@ ProgressCircle.prototype = Object.create(EventEmitter.prototype, {
 	destroy: {
 		enumerable: true,
 		value: function () {
-			this[context2d] = null;
-			this[$canvas] = null;
+			this[_].context2d = null;
+			this[_].$canvas = null;
 			return this;
 		}
 	}
@@ -1944,14 +1946,7 @@ const EventEmitter = require("events");
 const Timer = require("../components/timer");
 const ProgressDonut = require("./progress-circle");
 
-const $el = Symbol("$el");
-const $daysTile = Symbol("$daysTile");
-const $minsTile = Symbol("$minsTile");
-const $hoursTile = Symbol("$hoursTile");
-const $secsTile = Symbol("$secsTile");
-const timer = Symbol("timer");
-const supportsCanvas = Symbol("supportsCanvas");
-const hideZeroTiles = Symbol("hideZeroTiles");
+const _ = Symbol("_");
 
 /**
  * @public	Tile visualization for a Timer object
@@ -1963,11 +1958,12 @@ const hideZeroTiles = Symbol("hideZeroTiles");
 function TimerView(mSettings) {
 	mSettings = mSettings instanceof Object ? mSettings : {};
 	EventEmitter.apply(this, arguments);
-	this[$el] = null;
-	this[$daysTile] = null;
-	this[$minsTile] = null;
-	this[$hoursTile] = null;
-	this[$secsTile] = null;
+	this[_] = {};
+	this[_].$el = null;
+	this[_].$daysTile = null;
+	this[_].$minsTile = null;
+	this[_].$hoursTile = null;
+	this[_].$secsTile = null;
 	this.timer = mSettings.timer instanceof Timer ? mSettings.timer : new Timer();
 	this._updateHandler = this.update.bind(this);
 	this._startHandler = this.start.bind(this);
@@ -1975,8 +1971,8 @@ function TimerView(mSettings) {
 	this.timer.on("update", this._updateHandler);
 	this.timer.on("stop", this._updateHandler);
 	this.timer.on("ready", this._updateHandler);
-	this[supportsCanvas] = HTMLCanvasElement && CanvasRenderingContext2D ? true : false;
-	this[hideZeroTiles] = mSettings.hideZeroTiles === true ? true : false;
+	this[_].supportsCanvas = HTMLCanvasElement && CanvasRenderingContext2D ? true : false;
+	this[_].hideZeroTiles = mSettings.hideZeroTiles === true ? true : false;
 	return this;
 }
 
@@ -1992,10 +1988,10 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$el: {
 		enumerable: true,
 		get: function () {
-			if (!(this[$el] instanceof HTMLElement)) {
+			if (!(this[_].$el instanceof HTMLElement)) {
 				this.render();
 			}
-			return this[$el];
+			return this[_].$el;
 		}
 	},
 
@@ -2005,7 +2001,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$daysTile: {
 		enumerable: true,
 		get: function () {
-			return this[$daysTile];
+			return this[_].$daysTile;
 		}
 	},
 
@@ -2015,7 +2011,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$minsTile: {
 		enumerable: true,
 		get: function () {
-			return this[$minsTile];
+			return this[_].$minsTile;
 		}
 	},
 
@@ -2025,7 +2021,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$hoursTile: {
 		enumerable: true,
 		get: function () {
-			return this[$hoursTile];
+			return this[_].$hoursTile;
 		}
 	},
 
@@ -2035,7 +2031,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$secsTile: {
 		enumerable: true,
 		get: function () {
-			return this[$secsTile];
+			return this[_].$secsTile;
 		}
 	},
 
@@ -2045,7 +2041,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	supportsCanvas: {
 		enumerable: true,
 		get: function () {
-			return this[supportsCanvas];
+			return this[_].supportsCanvas;
 		}
 	},
 
@@ -2055,11 +2051,11 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	hideZeroTiles: {
 		enumerable: true,
 		set: function (bValue) {
-			this[hideZeroTiles] = bValue === true ? true : false;
+			this[_].hideZeroTiles = bValue === true ? true : false;
 			return this.update();
 		},
 		get: function () {
-			return this[hideZeroTiles];
+			return this[_].hideZeroTiles;
 		}
 	},
 
@@ -2070,12 +2066,12 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (oTimer) {
 			if (oTimer instanceof Timer) {
-				this[timer] = oTimer;
+				this[_].timer = oTimer;
 			}
 			return this;
 		},
 		get: function () {
-			return this[timer];
+			return this[_].timer;
 		}
 	},
 
@@ -2157,12 +2153,12 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 				<div class="tile"><h1 class="secs"></h1><p>SECS</p></div>
 			</div>`;
 
-			this[$el] = el.querySelector(".timerDisplay");
+			this[_].$el = el.querySelector(".timerDisplay");
 			el = el.removeChild(this.$el);
-			this[$daysTile] = el.querySelector(".days");
-			this[$hoursTile] = el.querySelector(".hours");
-			this[$minsTile] = el.querySelector(".mins");
-			this[$secsTile] = el.querySelector(".secs");
+			this[_].$daysTile = el.querySelector(".days");
+			this[_].$hoursTile = el.querySelector(".hours");
+			this[_].$minsTile = el.querySelector(".mins");
+			this[_].$secsTile = el.querySelector(".secs");
 
 			if (this.supportsCanvas) {
 				this._oDaysDonut = new ProgressDonut({ $canvas: this.$daysTile, max: this.timer.daysLeft, value: 0, bgFill: "white", lineFill: "red", backLineFill: "#dddddd", valueColor: "#777777" });
@@ -2209,18 +2205,14 @@ module.exports = {
 },{"./toggleSwitch":15,"./widget":16}],15:[function(require,module,exports){
 const Widget = require("./widget");
 
-const $inputEl = Symbol("$inputEl");
-const label = Symbol("label");
-const description = Symbol("description");
-const name = Symbol("name");
-const state = Symbol("state");
-const ontoggle = Symbol("ontoggle");
+const _ = Symbol("_");
 
 /**
  * ToggleSwitch
  * JS wrapper for HTML checkbox input, styled with CSS3 to look like a Toggle Switch.
  */
 function ToggleSwitch(mSettings) {
+	this[_] = {};
 	this._fToggleHandler = this.toggleHandler.bind(this);
 	Widget.apply(this, arguments);
 	return this;
@@ -2236,11 +2228,11 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 		value: function (mSettings) {
 			Widget.prototype.init.apply(this, arguments);
 			// mSettings.id = this.$el.id || mSettings.id || "__ToggleSwitch" + Date.now();
-			this[label] = typeof mSettings.label === "string" ? mSettings.label : "Switch " + this.id;
-			this[description] = typeof mSettings.label === "string" ? mSettings.description : this.label;
-			this[name] = typeof mSettings.label === "string" ? mSettings.name : this.id + "Checkbox";
-			this[state] = !mSettings.state ? 0 : 1;
-			this[ontoggle] = typeof mSettings.ontoggle === "function" ? mSettings.ontoggle : null;
+			this[_].label = typeof mSettings.label === "string" ? mSettings.label : "Switch " + this.id;
+			this[_].description = typeof mSettings.label === "string" ? mSettings.description : this.label;
+			this[_].name = typeof mSettings.label === "string" ? mSettings.name : this.id + "Checkbox";
+			this[_].state = !mSettings.state ? 0 : 1;
+			this[_].ontoggle = typeof mSettings.ontoggle === "function" ? mSettings.ontoggle : null;
 			return this;
 		}
 	},
@@ -2248,47 +2240,47 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 	$inputEl: {
 		enumerable: true,
 		get: function () {
-			return this[$inputEl];
+			return this[_].$inputEl;
 		}
 	},
 
 	label: {
 		enumerable: true,
 		set: function (sLabel) {
-			this[label] = typeof sLabel === "string" ? sLabel : "";
+			this[_].label = typeof sLabel === "string" ? sLabel : "";
 			return this;
 		},
 		get: function () {
-			return this[label];
+			return this[_].label;
 		}
 	},
 
 	description: {
 		enumerable: true,
 		set: function (sDescription) {
-			this[description] = typeof sDescription === "string" ? description : "";
+			this[_].description = typeof sDescription === "string" ? description : "";
 			return this;
 		},
 		get: function () {
-			return this[description];
+			return this[_].description;
 		}
 	},
 
 	name: {
 		enumerable: true,
 		set: function (sName) {
-			this[name] = typeof sName === "string" ? sName : "";
+			this[_].name = typeof sName === "string" ? sName : "";
 			return this;
 		},
 		get: function () {
-			return this[name];
+			return this[_].name;
 		}
 	},
 
 	state: {
 		enumerable: true,
 		set: function (iValue) {
-			this[state] = !!iValue ? 1 : 0;
+			this[_].state = !!iValue ? 1 : 0;
 			if (!(this.$inputEl instanceof HTMLInputElement)) {
 				this.render();
 			}
@@ -2301,7 +2293,7 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 			return this;
 		},
 		get: function () {
-			return this[state];
+			return this[_].state;
 		}
 	},
 
@@ -2316,12 +2308,12 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (fn === null || typeof fn === "function") {
-				this[ontoggle] = fn;
+				this[_].ontoggle = fn;
 			}
 			return this;
 		},
 		get: function () {
-			return this[ontoggle];
+			return this[_].ontoggle;
 		}
 	},
 
@@ -2373,7 +2365,7 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 	postRender: {
 		enumerable: true,
 		value: function () {
-			this[$inputEl] = this.$el.querySelector("input[type=checkbox]");
+			this[_].$inputEl = this.$el.querySelector("input[type=checkbox]");
 			this.$inputEl.addEventListener("change", this._fToggleHandler);
 			this.$inputEl.checked = !!this.state;
 			this.$el.classList.add("switch");
@@ -2390,7 +2382,7 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 			}
 			return Widget.prototype.destroy.apply(this, arguments);
 		}
-	},
+	}
 
 });
 
@@ -2403,15 +2395,15 @@ module.exports = ToggleSwitch;
 },{"./widget":16}],16:[function(require,module,exports){
 const EventEmitter = require("events");
 
-const id = Symbol("id");
-const $el = Symbol("$el");
+const _ = Symbol("_");
 
 /**
  * Widget
  * Base JS class for wrapping HTML elements styled with CSS3.
  */
 function Widget (mSettings) {
-  EventEmitter.apply(this, arguments);
+	EventEmitter.apply(this, arguments);
+	this[_] = {};
 	this.init(mSettings);
 	this.render();
   return this;
@@ -2427,8 +2419,8 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		value: function (mSettings) {
 			mSettings = mSettings instanceof Object ? mSettings : {};			
-			this[$el] = mSettings.$el instanceof HTMLElement ? mSettings.$el : document.createElement("div");
-			this[id] = this.$el.id || mSettings.id || "__CSS3Widget" + Date.now();
+			this[_].$el = mSettings.$el instanceof HTMLElement ? mSettings.$el : document.createElement("div");
+			this[_].id = this.$el.id || mSettings.id || "__CSS3Widget" + Date.now();
 			return this;
 		}
 	},
@@ -2436,7 +2428,7 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 	id: {
 		enumerable: true,
 		get: function () {
-			return this[id];
+			return this[_].id;
 		}
 	},  
 
@@ -2444,12 +2436,12 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function ($El) {
 			if ($El instanceof HTMLElement) {
-				this[$el] = $El;
+				this[_].$el = $El;
 			}
 			return this;
 		},
 		get: function () {
-			return this[$el];
+			return this[_].$el;
 		}
 	},
 
@@ -2478,7 +2470,7 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
     value: function () {
 			this.preRender();
-      this[$el] = this.$el instanceof HTMLElement ? this.$el : document.createElement("div");
+      this[_].$el = this.$el instanceof HTMLElement ? this.$el : document.createElement("div");
 			this.$el.setAttribute("id", this.id);
 			this.$el.classList.add("widget");
 			this.$el.innerHTML = this.getElementTemplate();

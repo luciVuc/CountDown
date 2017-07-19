@@ -1,13 +1,13 @@
 const EventEmitter = require("events");
 const Clock = require("../components/clock");
 
-const props = Symbol("props");
+const _ = Symbol("_");
 
 function ClockView (mSettings) {
   EventEmitter.apply(this, arguments);
   mSettings = typeof mSettings === "object" ? mSettings : {};
-  this[props] = {};
-  this[props].$el = null;
+  this[_] = {};
+  this[_].$el = null;
 	this.onUpdate = this.update.bind(this);
 	this.onStart = this.start.bind(this);
   this.clock = mSettings.clock instanceof Clock ? mSettings.clock : new Clock();
@@ -26,13 +26,13 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
     enumerable: true,
     set: function (oArg) {
       if (oArg instanceof Clock) {
-        this[props].clock = oArg;
+        this[_].clock = oArg;
         this.render();
       }
       return this;
     },
     get: function () {
-      return this[props].clock;
+      return this[_].clock;
     }
   },
 
@@ -42,10 +42,10 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
 	$el: {
 		enumerable: true,
 		get: function () {
-			if (!(this[props].$el instanceof HTMLElement)) {
+			if (!(this[_].$el instanceof HTMLElement)) {
 				this.render();
 			}
-			return this[props].$el;
+			return this[_].$el;
 		}
 	},
 
@@ -71,8 +71,8 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
 			if (!(this.$el instanceof HTMLElement)) {
 				this.render();
 			}
-      this[props].$time.innerHTML = this.clock.formattedTime;
-      this[props].$timePeriod.innerHTML = this.clock.formattedTimePeriod;
+      this[_].$time.innerHTML = this.clock.formattedTime;
+      this[_].$timePeriod.innerHTML = this.clock.formattedTimePeriod;
 			return this;
 		}
 	},
@@ -85,10 +85,10 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
 			el.innerHTML = `<div class="clock">
         <span class="time">${this.clock.formattedTime}</span><span class="timePeriod">${this.clock.formattedTimePeriod}</span>
       </div>`;
-			this[props].$el = el.querySelector(".clock");
+			this[_].$el = el.querySelector(".clock");
 			el = el.removeChild(this.$el);
-			this[props].$time = el.querySelector(".time");
-			this[props].$timePeriod = el.querySelector(".timePeriod");
+			this[_].$time = el.querySelector(".time");
+			this[_].$timePeriod = el.querySelector(".timePeriod");
 			return this;
     }
 	},
@@ -101,8 +101,8 @@ ClockView.prototype = Object.create(EventEmitter.prototype, {
 		value: function () {
 			this.clock.removeAllListeners("start");
       this.clock.removeAllListeners("update");
-      this[props].clock = null;
-      this[props] = null;
+      this[_].clock = null;
+      this[_] = null;
       this.onUpdate = null;
       this.onStart = null;
 			return this;

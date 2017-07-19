@@ -1,15 +1,6 @@
 const EventEmitter = require("events");
 
-const final = Symbol("final");
-const daysLeft = Symbol("daysLeft");
-const hoursLeft = Symbol("hoursLeft");
-const minutesLeft = Symbol("minutesLeft");
-const secondsLeft = Symbol("secondsLeft");
-const tickInterval = Symbol("tickInterval");
-const onupdate = Symbol("onupdate");
-const onstart = Symbol("onstart");
-const onstop = Symbol("onstop");
-const onready = Symbol("onready");
+const _ = Symbol("_");
 
 /**
  * @public	Timer object
@@ -26,16 +17,17 @@ function Timer(mSettings) {
 	EventEmitter.apply(this, arguments);
 	mSettings = mSettings instanceof Object ? mSettings : {};
 	// this.final = Number.isInteger(mSettings.finalTime) ? mSettings.finalTime : Date.now() + 10;
+	this[_] = {};
 	this.final = mSettings.finalDateTime instanceof Date ? mSettings.finalDateTime : new Date();
-	this[daysLeft] = 0;
-	this[hoursLeft] = 0;
-	this[minutesLeft] = 0;
-	this[secondsLeft] = 0;
-	this[onupdate] = mSettings.onupdate || null;
-	this[onstart] = mSettings.onstart || null;
-	this[onstop] = mSettings.onstop || null;
-	this[onready] = mSettings.onready || null;
-	this[tickInterval] = null;
+	this[_].daysLeft = 0;
+	this[_].hoursLeft = 0;
+	this[_].minutesLeft = 0;
+	this[_].secondsLeft = 0;
+	this[_].onupdate = mSettings.onupdate || null;
+	this[_].onstart = mSettings.onstart || null;
+	this[_].onstop = mSettings.onstop || null;
+	this[_].onready = mSettings.onready || null;
+	this[_].tickInterval = null;
 	return this;
 }
 
@@ -52,12 +44,12 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (oDate) {
 			if (oDate instanceof Date && oDate.getTime() >= Date.now()) {
-				this[final] = oDate;
+				this[_].final = oDate;
 			}
 			return this;
 		},
 		get: function () {
-			return this[final];
+			return this[_].final;
 		}
 	},
 
@@ -67,7 +59,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	daysLeft: {
 		enumerable: true,
 		get: function () {
-			return this[daysLeft];
+			return this[_].daysLeft;
 		}
 	},
 
@@ -77,7 +69,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	hoursLeft: {
 		enumerable: true,
 		get: function () {
-			return this[hoursLeft];
+			return this[_].hoursLeft;
 		}
 	},
 
@@ -87,7 +79,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	minutesLeft: {
 		enumerable: true,
 		get: function () {
-			return this[minutesLeft];
+			return this[_].minutesLeft;
 		}
 	},
 
@@ -97,7 +89,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	secondsLeft: {
 		enumerable: true,
 		get: function () {
-			return this[secondsLeft];
+			return this[_].secondsLeft;
 		}
 	},
 
@@ -108,12 +100,12 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[onupdate] = fn;
+				this[_].onupdate = fn;
 			}
 			return this;
 		},
 		get: function () {
-			return this[onupdate];
+			return this[_].onupdate;
 		}
 	},
 
@@ -124,11 +116,11 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[onstart] = fn;
+				this[_].onstart = fn;
 			}
 		},
 		get: function () {
-			return this[onstart];
+			return this[_].onstart;
 		}
 	},
 
@@ -139,11 +131,11 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[onstop] = fn;
+				this[_].onstop = fn;
 			}
 		},
 		get: function () {
-			return this[onstop];
+			return this[_].onstop;
 		}
 	},
 
@@ -154,11 +146,11 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[onready] = fn;
+				this[_].onready = fn;
 			}
 		},
 		get: function () {
-			return this[onready];
+			return this[_].onready;
 		}
 	},
 
@@ -186,10 +178,10 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 
 			if (diff > 0) {
 				// re-calculate the days, hours, minutes and seconds left
-				this[daysLeft] = Math.floor(diff / 1000 / 60 / 60 / 24);
-				this[hoursLeft] = Math.floor(diff / 1000 / 60 / 60 % 24);
-				this[minutesLeft] = Math.floor(diff / 1000 / 60 % 60);
-				this[secondsLeft] = Math.floor(diff / 1000 % 60);
+				this[_].daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24);
+				this[_].hoursLeft = Math.floor(diff / 1000 / 60 / 60 % 24);
+				this[_].minutesLeft = Math.floor(diff / 1000 / 60 % 60);
+				this[_].secondsLeft = Math.floor(diff / 1000 % 60);
 				this.emit("update", this);
 				if (typeof this.onupdate === "function") {
 					this.onupdate(this);
@@ -215,7 +207,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 		value: function () {
 			if (this.final.getTime() > Date.now()) {
 				// start updating the count down every 1 second
-				this[tickInterval] = setInterval(this.update.bind(this), 250);
+				this[_].tickInterval = setInterval(this.update.bind(this), 250);
 			} else {
 				this.update();
 			}
@@ -233,8 +225,8 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	stop: {
 		enumerable: true,
 		value: function () {
-			clearInterval(this[tickInterval]);
-			this[tickInterval] = null;
+			clearInterval(this[_].tickInterval);
+			this[_].tickInterval = null;
 			// this.update();
 			this.emit("stop", this);
 			if (typeof this.onstop === "function") {
@@ -249,7 +241,7 @@ Timer.prototype = Object.create(EventEmitter.prototype, {
 	destroy: {
 		enumerable: true,
 		value: function () {
-			this[final] = null;
+			this[_].final = null;
 			this.removeAllListeners("start");
 			this.removeAllListeners("stop");
 			this.removeAllListeners("update");

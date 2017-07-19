@@ -2,14 +2,7 @@ const EventEmitter = require("events");
 const Timer = require("../components/timer");
 const ProgressDonut = require("./progress-circle");
 
-const $el = Symbol("$el");
-const $daysTile = Symbol("$daysTile");
-const $minsTile = Symbol("$minsTile");
-const $hoursTile = Symbol("$hoursTile");
-const $secsTile = Symbol("$secsTile");
-const timer = Symbol("timer");
-const supportsCanvas = Symbol("supportsCanvas");
-const hideZeroTiles = Symbol("hideZeroTiles");
+const _ = Symbol("_");
 
 /**
  * @public	Tile visualization for a Timer object
@@ -21,11 +14,12 @@ const hideZeroTiles = Symbol("hideZeroTiles");
 function TimerView(mSettings) {
 	mSettings = mSettings instanceof Object ? mSettings : {};
 	EventEmitter.apply(this, arguments);
-	this[$el] = null;
-	this[$daysTile] = null;
-	this[$minsTile] = null;
-	this[$hoursTile] = null;
-	this[$secsTile] = null;
+	this[_] = {};
+	this[_].$el = null;
+	this[_].$daysTile = null;
+	this[_].$minsTile = null;
+	this[_].$hoursTile = null;
+	this[_].$secsTile = null;
 	this.timer = mSettings.timer instanceof Timer ? mSettings.timer : new Timer();
 	this._updateHandler = this.update.bind(this);
 	this._startHandler = this.start.bind(this);
@@ -33,8 +27,8 @@ function TimerView(mSettings) {
 	this.timer.on("update", this._updateHandler);
 	this.timer.on("stop", this._updateHandler);
 	this.timer.on("ready", this._updateHandler);
-	this[supportsCanvas] = HTMLCanvasElement && CanvasRenderingContext2D ? true : false;
-	this[hideZeroTiles] = mSettings.hideZeroTiles === true ? true : false;
+	this[_].supportsCanvas = HTMLCanvasElement && CanvasRenderingContext2D ? true : false;
+	this[_].hideZeroTiles = mSettings.hideZeroTiles === true ? true : false;
 	return this;
 }
 
@@ -50,10 +44,10 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$el: {
 		enumerable: true,
 		get: function () {
-			if (!(this[$el] instanceof HTMLElement)) {
+			if (!(this[_].$el instanceof HTMLElement)) {
 				this.render();
 			}
-			return this[$el];
+			return this[_].$el;
 		}
 	},
 
@@ -63,7 +57,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$daysTile: {
 		enumerable: true,
 		get: function () {
-			return this[$daysTile];
+			return this[_].$daysTile;
 		}
 	},
 
@@ -73,7 +67,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$minsTile: {
 		enumerable: true,
 		get: function () {
-			return this[$minsTile];
+			return this[_].$minsTile;
 		}
 	},
 
@@ -83,7 +77,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$hoursTile: {
 		enumerable: true,
 		get: function () {
-			return this[$hoursTile];
+			return this[_].$hoursTile;
 		}
 	},
 
@@ -93,7 +87,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	$secsTile: {
 		enumerable: true,
 		get: function () {
-			return this[$secsTile];
+			return this[_].$secsTile;
 		}
 	},
 
@@ -103,7 +97,7 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	supportsCanvas: {
 		enumerable: true,
 		get: function () {
-			return this[supportsCanvas];
+			return this[_].supportsCanvas;
 		}
 	},
 
@@ -113,11 +107,11 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 	hideZeroTiles: {
 		enumerable: true,
 		set: function (bValue) {
-			this[hideZeroTiles] = bValue === true ? true : false;
+			this[_].hideZeroTiles = bValue === true ? true : false;
 			return this.update();
 		},
 		get: function () {
-			return this[hideZeroTiles];
+			return this[_].hideZeroTiles;
 		}
 	},
 
@@ -128,12 +122,12 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (oTimer) {
 			if (oTimer instanceof Timer) {
-				this[timer] = oTimer;
+				this[_].timer = oTimer;
 			}
 			return this;
 		},
 		get: function () {
-			return this[timer];
+			return this[_].timer;
 		}
 	},
 
@@ -215,12 +209,12 @@ TimerView.prototype = Object.create(EventEmitter.prototype, {
 				<div class="tile"><h1 class="secs"></h1><p>SECS</p></div>
 			</div>`;
 
-			this[$el] = el.querySelector(".timerDisplay");
+			this[_].$el = el.querySelector(".timerDisplay");
 			el = el.removeChild(this.$el);
-			this[$daysTile] = el.querySelector(".days");
-			this[$hoursTile] = el.querySelector(".hours");
-			this[$minsTile] = el.querySelector(".mins");
-			this[$secsTile] = el.querySelector(".secs");
+			this[_].$daysTile = el.querySelector(".days");
+			this[_].$hoursTile = el.querySelector(".hours");
+			this[_].$minsTile = el.querySelector(".mins");
+			this[_].$secsTile = el.querySelector(".secs");
 
 			if (this.supportsCanvas) {
 				this._oDaysDonut = new ProgressDonut({ $canvas: this.$daysTile, max: this.timer.daysLeft, value: 0, bgFill: "white", lineFill: "red", backLineFill: "#dddddd", valueColor: "#777777" });

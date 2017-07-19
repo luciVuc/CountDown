@@ -1,14 +1,14 @@
 const EventEmitter = require("events");
 
-const id = Symbol("id");
-const $el = Symbol("$el");
+const _ = Symbol("_");
 
 /**
  * Widget
  * Base JS class for wrapping HTML elements styled with CSS3.
  */
 function Widget (mSettings) {
-  EventEmitter.apply(this, arguments);
+	EventEmitter.apply(this, arguments);
+	this[_] = {};
 	this.init(mSettings);
 	this.render();
   return this;
@@ -24,8 +24,8 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		value: function (mSettings) {
 			mSettings = mSettings instanceof Object ? mSettings : {};			
-			this[$el] = mSettings.$el instanceof HTMLElement ? mSettings.$el : document.createElement("div");
-			this[id] = this.$el.id || mSettings.id || "__CSS3Widget" + Date.now();
+			this[_].$el = mSettings.$el instanceof HTMLElement ? mSettings.$el : document.createElement("div");
+			this[_].id = this.$el.id || mSettings.id || "__CSS3Widget" + Date.now();
 			return this;
 		}
 	},
@@ -33,7 +33,7 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 	id: {
 		enumerable: true,
 		get: function () {
-			return this[id];
+			return this[_].id;
 		}
 	},  
 
@@ -41,12 +41,12 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function ($El) {
 			if ($El instanceof HTMLElement) {
-				this[$el] = $El;
+				this[_].$el = $El;
 			}
 			return this;
 		},
 		get: function () {
-			return this[$el];
+			return this[_].$el;
 		}
 	},
 
@@ -75,7 +75,7 @@ Widget.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
     value: function () {
 			this.preRender();
-      this[$el] = this.$el instanceof HTMLElement ? this.$el : document.createElement("div");
+      this[_].$el = this.$el instanceof HTMLElement ? this.$el : document.createElement("div");
 			this.$el.setAttribute("id", this.id);
 			this.$el.classList.add("widget");
 			this.$el.innerHTML = this.getElementTemplate();

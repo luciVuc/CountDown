@@ -1,17 +1,13 @@
 const Widget = require("./widget");
 
-const $inputEl = Symbol("$inputEl");
-const label = Symbol("label");
-const description = Symbol("description");
-const name = Symbol("name");
-const state = Symbol("state");
-const ontoggle = Symbol("ontoggle");
+const _ = Symbol("_");
 
 /**
  * ToggleSwitch
  * JS wrapper for HTML checkbox input, styled with CSS3 to look like a Toggle Switch.
  */
 function ToggleSwitch(mSettings) {
+	this[_] = {};
 	this._fToggleHandler = this.toggleHandler.bind(this);
 	Widget.apply(this, arguments);
 	return this;
@@ -27,11 +23,11 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 		value: function (mSettings) {
 			Widget.prototype.init.apply(this, arguments);
 			// mSettings.id = this.$el.id || mSettings.id || "__ToggleSwitch" + Date.now();
-			this[label] = typeof mSettings.label === "string" ? mSettings.label : "Switch " + this.id;
-			this[description] = typeof mSettings.label === "string" ? mSettings.description : this.label;
-			this[name] = typeof mSettings.label === "string" ? mSettings.name : this.id + "Checkbox";
-			this[state] = !mSettings.state ? 0 : 1;
-			this[ontoggle] = typeof mSettings.ontoggle === "function" ? mSettings.ontoggle : null;
+			this[_].label = typeof mSettings.label === "string" ? mSettings.label : "Switch " + this.id;
+			this[_].description = typeof mSettings.label === "string" ? mSettings.description : this.label;
+			this[_].name = typeof mSettings.label === "string" ? mSettings.name : this.id + "Checkbox";
+			this[_].state = !mSettings.state ? 0 : 1;
+			this[_].ontoggle = typeof mSettings.ontoggle === "function" ? mSettings.ontoggle : null;
 			return this;
 		}
 	},
@@ -39,47 +35,47 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 	$inputEl: {
 		enumerable: true,
 		get: function () {
-			return this[$inputEl];
+			return this[_].$inputEl;
 		}
 	},
 
 	label: {
 		enumerable: true,
 		set: function (sLabel) {
-			this[label] = typeof sLabel === "string" ? sLabel : "";
+			this[_].label = typeof sLabel === "string" ? sLabel : "";
 			return this;
 		},
 		get: function () {
-			return this[label];
+			return this[_].label;
 		}
 	},
 
 	description: {
 		enumerable: true,
 		set: function (sDescription) {
-			this[description] = typeof sDescription === "string" ? description : "";
+			this[_].description = typeof sDescription === "string" ? description : "";
 			return this;
 		},
 		get: function () {
-			return this[description];
+			return this[_].description;
 		}
 	},
 
 	name: {
 		enumerable: true,
 		set: function (sName) {
-			this[name] = typeof sName === "string" ? sName : "";
+			this[_].name = typeof sName === "string" ? sName : "";
 			return this;
 		},
 		get: function () {
-			return this[name];
+			return this[_].name;
 		}
 	},
 
 	state: {
 		enumerable: true,
 		set: function (iValue) {
-			this[state] = !!iValue ? 1 : 0;
+			this[_].state = !!iValue ? 1 : 0;
 			if (!(this.$inputEl instanceof HTMLInputElement)) {
 				this.render();
 			}
@@ -92,7 +88,7 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 			return this;
 		},
 		get: function () {
-			return this[state];
+			return this[_].state;
 		}
 	},
 
@@ -107,12 +103,12 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (fn === null || typeof fn === "function") {
-				this[ontoggle] = fn;
+				this[_].ontoggle = fn;
 			}
 			return this;
 		},
 		get: function () {
-			return this[ontoggle];
+			return this[_].ontoggle;
 		}
 	},
 
@@ -164,7 +160,7 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 	postRender: {
 		enumerable: true,
 		value: function () {
-			this[$inputEl] = this.$el.querySelector("input[type=checkbox]");
+			this[_].$inputEl = this.$el.querySelector("input[type=checkbox]");
 			this.$inputEl.addEventListener("change", this._fToggleHandler);
 			this.$inputEl.checked = !!this.state;
 			this.$el.classList.add("switch");
@@ -181,7 +177,7 @@ ToggleSwitch.prototype = Object.create(Widget.prototype, {
 			}
 			return Widget.prototype.destroy.apply(this, arguments);
 		}
-	},
+	}
 
 });
 

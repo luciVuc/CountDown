@@ -1,6 +1,6 @@
 const EventEmitter = require("events");
 
-const props = Symbol("props");
+const _ = Symbol("_");
 
 /**
  * @public Clock
@@ -14,11 +14,11 @@ const props = Symbol("props");
  */
 function Clock(mSettings) {
   mSettings = typeof mSettings === "object" ? mSettings : {};
-  this[props] = {};
   EventEmitter.apply(this, arguments);
-  this[props].onupdate = typeof mSettings.onupdate === "function" ? mSettings.onupdate : null;
-  this[props].onstart = typeof mSettings.onstart === "function" ? mSettings.onstart : null;
-	this[props].tickInterval = null;
+  this[_] = {};
+  this[_].onupdate = typeof mSettings.onupdate === "function" ? mSettings.onupdate : null;
+  this[_].onstart = typeof mSettings.onstart === "function" ? mSettings.onstart : null;
+	this[_].tickInterval = null;
   this.date = mSettings.date instanceof Date ? mSettings.date : new Date();
   this.dateTimeFormat = mSettings.dateTimeFormat instanceof Intl.DateTimeFormat ? mSettings.dateTimeFormat : new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit' });
   return this;
@@ -49,12 +49,12 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     enumerable: true,
     set: function (oDate) {
       if (oDate instanceof Date) {
-        this[props].date = oDate;
+        this[_].date = oDate;
       }
       return this;
     },
     get: function () {
-      return this[props].date;
+      return this[_].date;
     }
   },
 
@@ -65,12 +65,12 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
     enumerable: true,
     set: function (oArg) {
       if (oArg instanceof Intl.DateTimeFormat) {
-        this[props].dateTimeFormat = oArg;
+        this[_].dateTimeFormat = oArg;
       }
       return this;
     },
     get: function () {
-      return this[props].dateTimeFormat;
+      return this[_].dateTimeFormat;
     }
   },
 
@@ -88,12 +88,12 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[props].onupdate = fn;
+				this[_].onupdate = fn;
 			}
 			return this;
 		},
 		get: function () {
-			return this[props].onupdate;
+			return this[_].onupdate;
 		}
 	},
 
@@ -104,11 +104,11 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
 		enumerable: true,
 		set: function (fn) {
 			if (typeof fn === "function" || fn === null) {
-				this[props].onstart = fn;
+				this[_].onstart = fn;
 			}
 		},
 		get: function () {
-			return this[props].onstart;
+			return this[_].onstart;
 		}
 	},
 
@@ -158,7 +158,7 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
   start: {
     enumerable: true,
     value: function () {
-      this[props].tickInterval = window.setInterval(this.update.bind(this), 2000);
+      this[_].tickInterval = window.setInterval(this.update.bind(this), 2000);
 			this.emit("start", this);
 			if (typeof this.onstart === "function") {
 				this.onstart(this);
@@ -177,12 +177,12 @@ Clock.prototype = Object.create(EventEmitter.prototype, {
 	destroy: {
 		enumerable: true,
 		value: function () {
-			this[props].date = null;
-			this[props].dateTimeFormat = null;
+			this[_].date = null;
+			this[_].dateTimeFormat = null;
 			this.removeAllListeners("start");
 			this.removeAllListeners("update");
-      clearInterval(this[props].tickInterval);
-      this[props].tickInterval = null;
+      clearInterval(this[_].tickInterval);
+      this[_].tickInterval = null;
 			return this;
 		}
   }
